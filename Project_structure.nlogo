@@ -62,7 +62,6 @@ to setup
   global-initialize
   municipality-initialize
   RC-initialize
-
   visualize
 
   reset-ticks
@@ -73,11 +72,11 @@ to global-initialize
 end
 
 to municipality-initialize
-
+  create-ordered-municipalities 3
 end
 
 to RC-initialize
-
+  create-ordered-RCs 10
 end
 
 
@@ -95,7 +94,7 @@ to go
         while [[remaining-waste-fraction] of self > 0] [
           request-offer
           ask RCs [create-offer]
-          establish-contract ; municipality chooses the contract it wants and make a contract link based on that
+          establish-contract ; municipality chooses the contract it wants and make a contract link based on that ; if an offer is established, left cacpacity of that RC should be updated
           ask offers [die] ; removing the offers before going to the next municipality
         ]
       ]
@@ -109,7 +108,18 @@ end
 
 ;; general procedures
 to visualize
-
+  set-default-shape municipalities "house"
+  set-default-shape RCs "circle"
+  ask municipalities
+  [
+    fd 15
+    set color blue
+  ]
+  ask RCs
+  [
+    fd 10
+    set color orange
+  ]
 end
 
 ;; municipality procedures:
@@ -146,18 +156,32 @@ to invest-in-knowledge
 
 end
 
-
-
 ;; RC procedures:
 to create-offer ;RC command
-
+    let temp1 remaining-capacity
+    let temp2 alpha
+    ifelse remaining-capacity = 0
+    [
+      ask my-offers
+      [
+        let ersp temp2 * recyclable-separated-waste                              ;;extractable recyclable waste from recyclable separated waste
+        let ernsp temp2 * temp2 * (total-waste - separated-waste)                ;;extractable recyclable waste from non-separated waste
+        set proposed-recycling-rate ((ersp + ernsp) / total-waste)               ;;recycling target proposed based on RCs ability to extract recyclable waste from total waste
+        set base-price ((0.9 + random 0.2) * 50 + (3 * temp2 - (separated-waste / total-waste)  - (recyclable-separated-waste / separated-waste)) * 50) ;;fixed cost plus vairable cost
+        set m 1.2 + random 0.3                                                   ;;m is a random factor (1.2, 1.5)
+        set proposed-capacity temp1                                              ;;Update offer link with remaining capacity of the RC
+      ]
+    ]
+    [
+      ask my-offers                                                              ;;undo the offers requested from the company if there is no capacity left to be offered
+      [die]
+    ]
 end
 
 to process-waste ;RC command
-
+;;collect money for processing waste = base price * waste collected
+;;check if fine is necessary -> if yes, collect fine, Fine is m * max((promised - delivered), 2% of promised) * base price
 end
-
-
 @#$#@#$#@
 GRAPHICS-WINDOW
 210
@@ -579,7 +603,7 @@ false
 Polygon -7500403 true true 270 75 225 30 30 225 75 270
 Polygon -7500403 true true 30 75 75 30 270 225 225 270
 @#$#@#$#@
-NetLogo 6.0.3
+NetLogo 6.0.4
 @#$#@#$#@
 @#$#@#$#@
 @#$#@#$#@
