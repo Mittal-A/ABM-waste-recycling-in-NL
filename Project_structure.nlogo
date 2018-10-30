@@ -9,6 +9,12 @@ globals [
   theta-couple
   week ; week number
   TTW  ; Total waste expected to be generated from all municipalities
+  investment-multiplier ; new line ; adjusts how much each knowledge factor needs to be increased by investment in knowledge
+  investment-cost ;new line ; what is the cost of each investment
+  offer-utility ; new line ; to see how good each new contract is
+  cheapest-base-price ; new line ; to know cheapest base price
+  candidate-offer ; new line ; to know which offer has the highest utility
+  candidate-RC ; new line ; to know who has offered the candidate-offer
 ]
 
 breed [municipalities municipality]
@@ -32,6 +38,7 @@ municipalities-own [
   SP ; collected in this month. zero at the begining of each month
   RSP ; collected in this month. zero at the begining of each month
   remaining-waste-fraction
+
 ]
 
 RCs-own[
@@ -126,6 +133,11 @@ end
 
 
 to go
+  ask municipalities [ ;new line
+    set TW 0 ;new line
+    set SP 0 ;new line
+    set RSP 0 ;new line
+  ] ;new line
   repeat 4 [
     set week (week + 1)
     ask municipalities [ produce-waste week ]
@@ -168,8 +180,14 @@ to visualize
 end
 
 ;; municipality procedures:
-to produce-waste [ x ] ; municipality command
+to produce-waste [ week-no ] ; municipality command
+  set TW (TW + (waste-function week-no) * (pop-old * theta-old + pop-family * theta-family + pop-family * theta-family + pop-single * theta-single))
+  set SP TW * beta1 * mu
+  set RSP min (list (beta2 * SP) (eta * TW))
+end
 
+to-report waste-function [x]
+  report 40 - 0.04 * x - exp(-0.01 * x) * sin(0.3 * x)
 end
 
 to request-offer ; municipality command
@@ -185,7 +203,28 @@ to request-offer ; municipality command
 end
 
 to establish-contract ; municipality command
-
+  set cheapest-base-price min ([base-price] of my-offers)
+  set candidate-offer one-of my-offers
+  ask candidate-offer [
+    set offer-utility ((min list recycling-target proposed-recycling-rate) / recycling-target * 2 + cheapest-base-price / base-price)
+  ]
+  ask my-offers[
+    if offer-utility <= ((min list recycling-target proposed-recycling-rate) / recycling-target * 2 + cheapest-base-price / base-price) [
+      set offer-utility ((min list recycling-target proposed-recycling-rate) / recycling-target * 2 + cheapest-base-price / base-price)
+      set candidate-offer self
+    ]
+  ]
+  ask candidate-offer[
+    set candidate-RC other-end
+  ]
+  create-contract-with candidate-RC[
+    set base-price [base-price] of candidate-offer
+    set promised-waste [proposed-capacity] of candidate-offer
+    set waste-fraction (promised-waste / [TW] of myself)
+    set m [m] of candidate-offer
+    set recycling-rate-met 0
+  ]
+  set remaining-waste-fraction (remaining-waste-fraction - [waste-fraction] of contract-with candidate-RC)
 end
 
 to check-investment-necessity
@@ -198,7 +237,9 @@ to check-investment-necessity
 end
 
 to invest-in-knowledge
-
+  set expenditure (expenditure + investment-cost)
+  set beta1 (beta1 + investment-importance * investment-multiplier)
+  set beta2 (beta2 + investment-knowledge-recycling * investment-multiplier)
 end
 
 ;; RC procedures:
@@ -278,10 +319,10 @@ ticks
 30.0
 
 BUTTON
-82
-47
-145
-80
+14
+53
+77
+86
 NIL
 setup
 NIL
@@ -295,10 +336,10 @@ NIL
 1
 
 BUTTON
-70
-97
-158
-130
+99
+98
+187
+131
 go-always
 go
 T
@@ -312,10 +353,10 @@ NIL
 1
 
 BUTTON
-72
-165
-149
-198
+6
+97
+83
+130
 go-once
 go
 NIL
@@ -327,6 +368,36 @@ NIL
 NIL
 NIL
 1
+
+SLIDER
+698
+58
+875
+91
+investment-importance
+investment-importance
+0
+10
+5.0
+1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+729
+106
+956
+139
+investment-knowledge-recycling
+investment-knowledge-recycling
+0
+10
+5.0
+1
+1
+NIL
+HORIZONTAL
 
 @#$#@#$#@
 ## WHAT IS IT?
