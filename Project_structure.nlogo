@@ -8,13 +8,13 @@ globals [
   theta-family
   theta-couple
   week ; week number
+  TTW  ; Total waste expected to be generated from all municipalities
   investment-multiplier ; new line ; adjusts how much each knowledge factor needs to be increased by investment in knowledge
   investment-cost ;new line ; what is the cost of each investment
   offer-utility ; new line ; to see how good each new contract is
   cheapest-base-price ; new line ; to know cheapest base price
   candidate-offer ; new line ; to know which offer has the highest utility
   candidate-RC ; new line ; to know who has offered the candidate-offer
-  the-whole-waste ; new line ; whole waste that will be generated at the beginning of the simulation
 ]
 
 breed [municipalities municipality]
@@ -24,6 +24,7 @@ undirected-link-breed [offers offer]
 undirected-link-breed [contracts contract]
 
 municipalities-own [
+  total-population
   pop-old
   pop-single
   pop-family
@@ -70,22 +71,64 @@ to setup
   global-initialize
   municipality-initialize
   RC-initialize
-
   visualize
 
   reset-ticks
 end
 
 to global-initialize
-  set week 0
+  set recycling-target 0.65
+  set num-municipalities 5
+  set num-RC 10
+  set eta 0.5
+  set theta-old 0.15
+  set theta-single 0.30
+  set theta-family 0.33
+  set theta-couple 0.22
+  set week 0; week number
+  repeat 4 [
+    set week (week + 1)
+    ask municipalities [
+      produce-waste week
+      set TTW (TTW + TW)
+    ]
+  ]
+  set week 0                                                            ; Total waste expected to be generated from all municipalities
 end
 
 to municipality-initialize
-
+  create-ordered-municipalities num-municipalities
+  ask municipalities [
+    set total-population (180000 + random 560000)
+    set pop-old theta-old * total-population
+    set pop-single theta-single * total-population
+    set pop-family theta-family * total-population
+    set pop-couple theta-couple * total-population
+    ifelse random 2 = 0
+    [
+      set centralized? False
+      set mu (0.9 + random-float 0.1)
+    ]
+    [
+      set centralized? True
+      set mu (0.7 + random-float 0.2)
+    ]
+    set expenditure 0
+    set beta1 (0.3 + random-float 0.1)                                        ; knowledge of importance of recycling
+    set beta2 (0.2 + random-float 0.2)                                        ; knowledge of how to recycle
+    set TW 0                                                            ; collected in this month. zero at the begining of each month
+    set SP 0                                                            ; collected in this month. zero at the begining of each month
+    set RSP 0                                                           ; collected in this month. zero at the begining of each month
+  ]
 end
 
 to RC-initialize
-
+  create-ordered-RCs num-RC
+  ask RCs[
+    set alpha (0.4 + random 0.4)                                        ;;the sorting factor of each company is set to a random value between 0.4 and 0.8
+    set capacity (TTW / num-RC)                                         ;;capacity is set to be an equal proportion of the total waste expected to be generated from all the municipalities
+    set remaining-capacity capacity                                     ;;the remaining capacity is equal to the total capacity of the RC at the start of the model run
+  ]
 end
 
 
@@ -108,7 +151,7 @@ to go
         while [[remaining-waste-fraction] of self > 0] [
           request-offer
           ask RCs [create-offer]
-          establish-contract ; municipality chooses the contract it wants and make a contract link based on that
+          establish-contract ; municipality chooses the contract it wants and make a contract link based on that ; if an offer is established, left cacpacity of that RC should be updated
           ask offers [die] ; removing the offers before going to the next municipality
         ]
       ]
@@ -122,7 +165,18 @@ end
 
 ;; general procedures
 to visualize
-
+  set-default-shape municipalities "house"
+  set-default-shape RCs "circle"
+  ask municipalities
+  [
+    fd 15
+    set color blue
+  ]
+  ask RCs
+  [
+    fd 10
+    set color orange
+  ]
 end
 
 ;; municipality procedures:
@@ -188,15 +242,53 @@ to invest-in-knowledge
   set beta2 (beta2 + investment-knowledge-recycling * investment-multiplier)
 end
 
-
-
 ;; RC procedures:
 to create-offer ;RC command
-
+    let temp1 remaining-capacity
+    let temp2 alpha
+    ifelse remaining-capacity = 0
+    [
+      ask my-offers
+      [
+        let ersp temp2 * recyclable-separated-waste                              ;;extractable recyclable waste from recyclable separated waste
+        let ernsp temp2 * temp2 * (total-waste - separated-waste)                ;;extractable recyclable waste from non-separated waste
+        set proposed-recycling-rate ((ersp + ernsp) / total-waste)               ;;recycling target proposed based on RCs ability to extract recyclable waste from total waste
+        set base-price ((0.9 + random 0.2) * 50 + (3 * temp2 - (separated-waste / total-waste)  - (recyclable-separated-waste / separated-waste)) * 50) ;;fixed cost plus vairable cost
+        ;;perhaps something from collection type should also be included here. If yes, it has to be added as part of the offer requested from municipality
+        set m 1.2 + random 0.3                                                   ;;m is a random factor (1.2, 1.5)
+        set proposed-capacity temp1                                              ;;Update offer link with remaining capacity of the RC
+      ]
+    ]
+    [
+      ask my-offers                                                              ;;undo the offers requested from the company if there is no capacity left to be offered
+      [die]
+    ]
 end
 
 to process-waste ;RC command
+  let tech alpha
+  ask my-contracts                                                               ;;for each contract in my contracts
+  [
+    let x [rsp] of other-end                                                     ;;local variable to store RSP of municipality with which the contract is made
+    let y [sp] of other-end                                                      ;;local variable to store SP of municipality with which the contract is made
+    let waste-generated [TW] of other-end                                        ;;local variable to store the total waste generated by the municipality this month
+    let waste-collected (waste-generated * waste-fraction)                       ;;local variable to store the waste passed on to RC for recycling
+    let fine 0                                                                   ;;local variable to store fine to be collected by RC
+    let money-to-be-collected 0                                                  ;;local variable to store total money to be collected by RC (fine + money for processing waste collected)
 
+    if waste-collected < promised-waste                                          ;;should the municipality pay fine?
+    [
+      set fine (m * base-price *  (promised-waste - waste-collected))            ;;calculate fine =  m * max((promised - delivered), 2% of promised) * base price
+    ]
+    set money-to-be-collected ((waste-collected * waste-fraction * base-price) + fine)
+
+    set recycling-rate-met ((tech * x) + (tech * tech * y)) / waste-generated    ;;update contract with this month's recycling rate
+
+    ask other-end[                                                               ;;ask municipalities to update their expenditure based on the money to be collected by the RC
+      let present-expenditure expenditure
+      set expenditure ( present-expenditure + money-to-be-collected)             ;;collect base price * waste processed in the month + fine
+    ]
+  ]
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
@@ -213,8 +305,8 @@ GRAPHICS-WINDOW
 1
 1
 0
-1
-1
+0
+0
 1
 -16
 16
@@ -649,7 +741,7 @@ false
 Polygon -7500403 true true 270 75 225 30 30 225 75 270
 Polygon -7500403 true true 30 75 75 30 270 225 225 270
 @#$#@#$#@
-NetLogo 6.0.3
+NetLogo 6.0.4
 @#$#@#$#@
 @#$#@#$#@
 @#$#@#$#@
