@@ -8,6 +8,7 @@ globals [
   theta-family
   theta-couple
   week ; week number
+  TTW  ; Total waste expected to be generated from all municipalities
 ]
 
 breed [municipalities municipality]
@@ -17,6 +18,7 @@ undirected-link-breed [offers offer]
 undirected-link-breed [contracts contract]
 
 municipalities-own [
+  total-population
   pop-old
   pop-single
   pop-family
@@ -68,15 +70,58 @@ to setup
 end
 
 to global-initialize
-  set week 0
+  set recycling-target 0.65
+  set num-municipalities 5
+  set num-RC 10
+  set eta 0.5
+  set theta-old 0.15
+  set theta-single 0.30
+  set theta-family 0.33
+  set theta-couple 0.22
+  set week 0; week number
+  repeat 4 [
+    set week (week + 1)
+    ask municipalities [
+      produce-waste week
+      set TTW (TTW + TW)
+    ]
+  ]
+  set week 0                                                            ; Total waste expected to be generated from all municipalities
 end
 
 to municipality-initialize
-  create-ordered-municipalities 3
+  create-ordered-municipalities num-municipalities
+  ask municipalities [
+    set total-population (180000 + random 560000)
+    set pop-old theta-old * total-population
+    set pop-single theta-single * total-population
+    set pop-family theta-family * total-population
+    set pop-couple theta-couple * total-population
+    ifelse random 2 = 0
+    [
+      set centralized? False
+      set mu (0.9 + random-float 0.1)
+    ]
+    [
+      set centralized? True
+      set mu (0.7 + random-float 0.2)
+    ]
+    set expenditure 0
+    set beta1 (0.3 + random-float 0.1)                                        ; knowledge of importance of recycling
+    set beta2 (0.2 + random-float 0.2)                                        ; knowledge of how to recycle
+    set TW 0                                                            ; collected in this month. zero at the begining of each month
+    set SP 0                                                            ; collected in this month. zero at the begining of each month
+    set RSP 0                                                           ; collected in this month. zero at the begining of each month
+  ]
 end
 
 to RC-initialize
-  create-ordered-RCs 10
+  create-ordered-RCs num-RC
+  ask RCs[
+    set alpha (0.4 + random 0.4)                                        ;;the sorting factor of each company is set to a random value between 0.4 and 0.8
+    set capacity (TTW / num-RC)                                         ;;capacity is set to be an equal proportion of the total waste expected to be generated from all the municipalities
+    set remaining-capacity capacity                                     ;;the remaining capacity is equal to the total capacity of the RC at the start of the model run
+  ]
 end
 
 
@@ -181,7 +226,7 @@ end
 
 to process-waste ;RC command
   let tech alpha
-  ask my-contracts                                                               ;;for each contract in my contracts (for each contract, the municipality associated with the contract should be asked to increase its expenditure, how to do that?)
+  ask my-contracts                                                               ;;for each contract in my contracts
   [
     let x [rsp] of other-end                                                     ;;local variable to store RSP of municipality with which the contract is made
     let y [sp] of other-end                                                      ;;local variable to store SP of municipality with which the contract is made
