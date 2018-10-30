@@ -241,9 +241,11 @@ to check-investment-necessity
 end
 
 to invest-in-knowledge
-  set expenditure (expenditure + investment-cost)
-  set beta1 (beta1 + investment-importance * investment-multiplier)
-  set beta2 (beta2 + investment-knowledge-recycling * investment-multiplier)
+  if (investment-importance > 0 and beta1 < 1) or (investment-knowledge-recycling > 0 and beta2 < 1)[
+    set expenditure (expenditure + investment-cost)
+    set beta1 min list (beta1 + investment-importance * investment-multiplier) 1
+    set beta2 min list (beta2 + investment-knowledge-recycling * investment-multiplier) 1
+  ]
 end
 
 ;; RC procedures:
