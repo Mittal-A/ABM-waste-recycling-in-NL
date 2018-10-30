@@ -197,9 +197,9 @@ end
 to request-offer ; municipality command
   create-offers-with RCs [
     set base-price 0
-    set total-waste [TW] of myself
-    set separated-waste [SP] of myself
-    set recyclable-separated-waste [RSP] of myself
+    set total-waste ([TW] of myself * max list [remaining-waste-fraction] of myself 0)
+    set separated-waste ([SP] of myself * max list [remaining-waste-fraction] of myself 0)
+    set recyclable-separated-waste ([RSP] of myself * max list [remaining-waste-fraction] of myself 0)
     set m 0
     set proposed-recycling-rate 0
     set proposed-capacity 0
@@ -260,7 +260,7 @@ to create-offer ;RC command
         set base-price ((0.9 + random 0.2) * 50 + (3 * temp2 - (separated-waste / total-waste)  - (recyclable-separated-waste / separated-waste)) * 50) ;;fixed cost plus vairable cost
         ;;perhaps something from collection type should also be included here. If yes, it has to be added as part of the offer requested from municipality
         set m 1.2 + random 0.3                                                   ;;m is a random factor (1.2, 1.5)
-        set proposed-capacity temp1                                              ;;Update offer link with remaining capacity of the RC
+        set proposed-capacity min list temp1 total-waste                         ;;Update offer link with remaining capacity of the RC
       ]
     ]
     [
