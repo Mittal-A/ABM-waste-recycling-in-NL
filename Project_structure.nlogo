@@ -70,9 +70,9 @@ to setup
 
   global-initialize
   municipality-initialize
+  initialize-waste
   RC-initialize
   visualize
-
   reset-ticks
 end
 
@@ -85,15 +85,7 @@ to global-initialize
   set theta-single 0.30
   set theta-family 0.33
   set theta-couple 0.22
-  set week 0; week number
-  repeat 4 [
-    set week (week + 1)
-    ask municipalities [
-      produce-waste week
-      set TTW (TTW + TW)
-    ]
-  ]
-  set week 0                                                            ; Total waste expected to be generated from all municipalities
+
 end
 
 to municipality-initialize
@@ -129,6 +121,18 @@ to RC-initialize
     set capacity (TTW / num-RC)                                         ;;capacity is set to be an equal proportion of the total waste expected to be generated from all the municipalities
     set remaining-capacity capacity                                     ;;the remaining capacity is equal to the total capacity of the RC at the start of the model run
   ]
+end
+
+to initialize-waste
+  set week 0; week number
+  repeat 4 [
+    set week (week + 1)
+    ask municipalities [
+      produce-waste week
+      set TTW (TTW + TW)
+    ]
+  ]
+  set week 0                                                            ; Total waste expected to be generated from all municipalities
 end
 
 
@@ -246,7 +250,7 @@ end
 to create-offer ;RC command
     let temp1 remaining-capacity
     let temp2 alpha
-    ifelse remaining-capacity = 0
+    ifelse remaining-capacity > 0
     [
       ask my-offers
       [
@@ -741,7 +745,7 @@ false
 Polygon -7500403 true true 270 75 225 30 30 225 75 270
 Polygon -7500403 true true 30 75 75 30 270 225 225 270
 @#$#@#$#@
-NetLogo 6.0.4
+NetLogo 6.0.3
 @#$#@#$#@
 @#$#@#$#@
 @#$#@#$#@
