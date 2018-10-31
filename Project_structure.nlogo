@@ -85,6 +85,14 @@ to global-initialize
   set theta-single 0.30
   set theta-family 0.33
   set theta-couple 0.22
+  set week 0
+  set TTW  0
+  set investment-multiplier 0.05            ;;5% increase in beta1 and beta 2 with investment in knowledge
+  set investment-cost 5000                  ;;assumption that each investment in policy costs around 5000 euros
+  set offer-utility 0
+  set cheapest-base-price 0
+  set candidate-offer 0
+  set candidate-RC 0
 
 end
 
@@ -133,6 +141,7 @@ to initialize-waste
     ]
   ]
   set week 0                                                            ; Total waste expected to be generated from all municipalities
+  print TTW
 end
 
 
@@ -163,7 +172,9 @@ to go
   ]
   ask RCs [process-waste] ; it should update expenditure of the related municipality by base price and fine as well
   ask municipalities [check-investment-necessity]
-
+  ask municipalities [
+      set label expenditure
+  ]
   tick
 end
 
@@ -747,7 +758,7 @@ false
 Polygon -7500403 true true 270 75 225 30 30 225 75 270
 Polygon -7500403 true true 30 75 75 30 270 225 225 270
 @#$#@#$#@
-NetLogo 6.0.3
+NetLogo 6.0.4
 @#$#@#$#@
 @#$#@#$#@
 @#$#@#$#@
