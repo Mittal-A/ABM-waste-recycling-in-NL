@@ -7,7 +7,6 @@ globals [
   theta-single
   theta-family
   theta-couple
-  week ; week number
   TTW  ; Total waste expected to be generated from all municipalities
   investment-multiplier ; new line ; adjusts how much each knowledge factor needs to be increased by investment in knowledge
   investment-cost ;new line ; what is the cost of each investment
@@ -24,7 +23,7 @@ undirected-link-breed [offers offer]
 undirected-link-breed [contracts contract]
 
 municipalities-own [
-  total-population
+  num-household
   pop-old
   pop-single
   pop-family
@@ -67,7 +66,8 @@ contracts-own[
 
 to setup
   clear-all
-
+  set-default-shape municipalities "house"
+  set-default-shape RCs "factory"
   global-initialize
   municipality-initialize
   initialize-waste
@@ -77,18 +77,17 @@ to setup
 end
 
 to global-initialize
-  set recycling-target 0.65
+  set recycling-target 0.5
   set num-municipalities 5
   set num-RC 10
-  set eta 0.5
-  set theta-old 0.15
-  set theta-single 0.30
-  set theta-family 0.33
-  set theta-couple 0.22
-  set week 0
+  set eta 0.35
+  set theta-old 0.3
+  set theta-single 0.5
+  set theta-family 1
+  set theta-couple 0.8
   set TTW  0
-  set investment-multiplier 0.05            ;;5% increase in beta1 and beta 2 with investment in knowledge
-  set investment-cost 5000                  ;;assumption that each investment in policy costs around 5000 euros
+  set investment-multiplier 0.001            ;; increase in beta1 and beta 2 with investment in knowledge
+  set investment-cost 5                  ;;assumption that each investment in policy costs around 5000 euros
   set offer-utility 0
   set cheapest-base-price 0
   set candidate-offer 0
@@ -99,11 +98,11 @@ end
 to municipality-initialize
   create-ordered-municipalities num-municipalities
   ask municipalities [
-    set total-population (180000 + random 560000)
-    set pop-old theta-old * total-population
-    set pop-single theta-single * total-population
-    set pop-family theta-family * total-population
-    set pop-couple theta-couple * total-population
+    set num-household (1000 + random 500)
+    set pop-old 0.2 * num-household
+    set pop-single 0.25 * num-household
+    set pop-family 0.30 * num-household
+    set pop-couple 0.25 * num-household
     ifelse random 2 = 0
     [
       set centralized? False
@@ -114,8 +113,8 @@ to municipality-initialize
       set mu (0.7 + random-float 0.2)
     ]
     set expenditure 0
-    set beta1 (0.3 + random-float 0.1)                                        ; knowledge of importance of recycling
-    set beta2 (0.2 + random-float 0.2)                                        ; knowledge of how to recycle
+    set beta1 (0.4 + random-float 0.1)                                        ; knowledge of importance of recycling
+    set beta2 (0.3 + random-float 0.2)                                        ; knowledge of how to recycle
     set TW 0                                                            ; collected in this month. zero at the begining of each month
     set SP 0                                                            ; collected in this month. zero at the begining of each month
     set RSP 0                                                           ; collected in this month. zero at the begining of each month
@@ -125,36 +124,45 @@ end
 to RC-initialize
   create-ordered-RCs num-RC
   ask RCs[
-    set alpha (0.4 + random 0.4)                                        ;;the sorting factor of each company is set to a random value between 0.4 and 0.8
-    set capacity (TTW / num-RC)                                         ;;capacity is set to be an equal proportion of the total waste expected to be generated from all the municipalities
+    set alpha (0.6 + random-float 0.2)                                        ;;the sorting factor of each company is set to a random value
+    set capacity (TTW / num-RC * 1.15)                                  ;;capacity is set to be an equal proportion of the total waste expected to be generated from all the municipalities
     set remaining-capacity capacity                                     ;;the remaining capacity is equal to the total capacity of the RC at the start of the model run
   ]
 end
 
 to initialize-waste
-  set week 0; week number
-  repeat 4 [
-    set week (week + 1)
-    ask municipalities [
-      produce-waste week
-      set TTW (TTW + TW)
-    ]
+  ask municipalities [
+    produce-waste 1
+    set TTW (TTW + TW)
   ]
-  set week 0                                                            ; Total waste expected to be generated from all municipalities
-  print TTW
 end
 
 
 to go
+  if (remainder ticks month-before-target-increase = 0 and ticks != 0)
+  [
+    set recycling-target (min list (recycling-target + recycling-target-increase / 100) 1)
+  ]
+
+  if (remainder ticks month-before-technology-increase = 0 and ticks != 0)
+  [
+    print "***"
+    ask RCs[
+      set alpha (min list (alpha + technology-increase / 100) 1)
+      print alpha
+
+    ]
+    print "***"
+  ]
+
   ask municipalities [ ;new line
     set TW 0 ;new line
     set SP 0 ;new line
     set RSP 0 ;new line
   ] ;new line
-  repeat 4 [
-    set week (week + 1)
-    ask municipalities [ produce-waste week ]
-  ]
+
+  ask municipalities [ produce-waste ticks]
+
   if remainder ticks 36 = 0 [
     ask municipalities [set remaining-waste-fraction 1]
     ask contracts [die] ; removing previous contracts to build new contracts
@@ -180,8 +188,6 @@ end
 
 ;; general procedures
 to visualize
-  set-default-shape municipalities "house"
-  set-default-shape RCs "circle"
   ask municipalities
   [
     fd 15
@@ -195,14 +201,14 @@ to visualize
 end
 
 ;; municipality procedures:
-to produce-waste [ week-no ] ; municipality command
-  set TW (TW + (waste-function week-no) * (pop-old * theta-old + pop-family * theta-family + pop-family * theta-family + pop-single * theta-single))
+to produce-waste [ month-no ] ; municipality command
+  set TW (TW + (waste-function month-no) * (pop-old * theta-old + pop-family * theta-family + pop-family * theta-family + pop-single * theta-single))
   set SP TW * beta1 * mu
   set RSP min (list (beta2 * SP) (eta * TW))
 end
 
 to-report waste-function [x]
-  report 40 - 0.04 * x - exp(-0.01 * x) * sin(0.3 * x)
+  report ((40 - 0.04 * x - exp(-0.01 * x) * sin(0.3 * x)) / 1000)
 end
 
 to request-offer ; municipality command
@@ -231,15 +237,22 @@ to establish-contract ; municipality command
   ]
   ask candidate-offer[
     set candidate-RC other-end
+    ask other-end
+    [
+      set remaining-capacity (remaining-capacity - [proposed-capacity] of myself)
+    ]
   ]
+
   create-contract-with candidate-RC[
     set base-price [base-price] of candidate-offer
     set promised-waste [proposed-capacity] of candidate-offer
     set waste-fraction (promised-waste / [TW] of myself)
     set m [m] of candidate-offer
     set recycling-rate-met 0
+    set color green
   ]
-  set remaining-waste-fraction (remaining-waste-fraction - [waste-fraction] of contract-with candidate-RC)
+
+  set remaining-waste-fraction max list (remaining-waste-fraction - [waste-fraction] of contract-with candidate-RC) 0
 end
 
 to check-investment-necessity
@@ -256,6 +269,8 @@ to invest-in-knowledge
     set expenditure (expenditure + investment-cost)
     set beta1 min list (beta1 + investment-importance * investment-multiplier) 1
     set beta2 min list (beta2 + investment-knowledge-recycling * investment-multiplier) 1
+    print beta1
+
   ]
 end
 
@@ -270,7 +285,7 @@ to create-offer ;RC command
         let ersp temp2 * recyclable-separated-waste                              ;;extractable recyclable waste from recyclable separated waste
         let ernsp temp2 * temp2 * (total-waste - separated-waste)                ;;extractable recyclable waste from non-separated waste
         set proposed-recycling-rate ((ersp + ernsp) / total-waste)               ;;recycling target proposed based on RCs ability to extract recyclable waste from total waste
-        set base-price ((0.9 + random 0.2) * 50 + (3 * temp2 - (separated-waste / total-waste)  - (recyclable-separated-waste / separated-waste)) * 50) ;;fixed cost plus vairable cost
+        set base-price ((0.9 + random 0.2) * 0.5 + (3 * temp2 - (separated-waste / total-waste)  - (recyclable-separated-waste / separated-waste)) * 0.5) ;;fixed cost plus vairable cost
         ;;perhaps something from collection type should also be included here. If yes, it has to be added as part of the offer requested from municipality
         set m 1.2 + random 0.3                                                   ;;m is a random factor (1.2, 1.5)
         set proposed-capacity min list temp1 total-waste                         ;;Update offer link with remaining capacity of the RC
@@ -286,10 +301,11 @@ to process-waste ;RC command
   let tech alpha
   ask my-contracts                                                               ;;for each contract in my contracts
   [
-    let x [rsp] of other-end                                                     ;;local variable to store RSP of municipality with which the contract is made
-    let y [sp] of other-end                                                      ;;local variable to store SP of municipality with which the contract is made
+    let x ([rsp] of other-end * waste-fraction)                                  ;;local variable to store RSP of municipality with which the contract is made
+    let y ([sp] of other-end * waste-fraction)                                   ;;local variable to store SP of municipality with which the contract is made
     let waste-generated [TW] of other-end                                        ;;local variable to store the total waste generated by the municipality this month
     let waste-collected (waste-generated * waste-fraction)                       ;;local variable to store the waste passed on to RC for recycling
+    let RNSP ((min list waste-collected promised-waste) * eta - x)
     let fine 0                                                                   ;;local variable to store fine to be collected by RC
     let money-to-be-collected 0                                                  ;;local variable to store total money to be collected by RC (fine + money for processing waste collected)
 
@@ -297,9 +313,9 @@ to process-waste ;RC command
     [
       set fine (m * base-price *  (promised-waste - waste-collected))            ;;calculate fine =  m * max((promised - delivered), 2% of promised) * base price
     ]
-    set money-to-be-collected ((waste-collected * waste-fraction * base-price) + fine)
+    set money-to-be-collected ((waste-collected * base-price) + fine)
 
-    set recycling-rate-met ((tech * x) + (tech * tech * y)) / waste-generated    ;;update contract with this month's recycling rate
+    set recycling-rate-met ((tech * x) + (tech * tech * RNSP)) / waste-collected / eta    ;;update contract with this month's recycling rate
 
     ask other-end[                                                               ;;ask municipalities to update their expenditure based on the money to be collected by the RC
       let present-expenditure expenditure
@@ -394,9 +410,9 @@ SLIDER
 investment-importance
 investment-importance
 0
-10
-5.0
 1
+1.0
+0.5
 1
 NIL
 HORIZONTAL
@@ -409,8 +425,86 @@ SLIDER
 investment-knowledge-recycling
 investment-knowledge-recycling
 0
+1
+1.0
+0.5
+1
+NIL
+HORIZONTAL
+
+PLOT
+908
+247
+1108
+397
+Recycling target met
+NIL
+NIL
+0.0
+10.0
+0.0
+1.0
+true
+false
+"" ""
+PENS
+"default" 1.0 0 -16777216 true "" "if count contracts > 0[\nlet x 0\nask contracts[\n set x x + recycling-rate-met\n]\nplot x / count contracts]"
+
+SLIDER
+688
+157
+927
+190
+recycling-target-increase
+recycling-target-increase
+0
 10
-5.0
+1.0
+1
+1
+percent
+HORIZONTAL
+
+SLIDER
+686
+204
+902
+237
+month-before-target-increase
+month-before-target-increase
+12
+60
+24.0
+1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+679
+258
+1002
+291
+technology-increase
+technology-increase
+0
+5
+2.0
+0.5
+1
+percent
+HORIZONTAL
+
+SLIDER
+659
+317
+901
+350
+month-before-technology-increase
+month-before-technology-increase
+12
+60
+36.0
 1
 1
 NIL
@@ -560,6 +654,26 @@ Circle -7500403 true true 8 8 285
 Circle -16777216 true false 60 75 60
 Circle -16777216 true false 180 75 60
 Polygon -16777216 true false 150 168 90 184 62 210 47 232 67 244 90 220 109 205 150 198 192 205 210 220 227 242 251 229 236 206 212 183
+
+factory
+false
+0
+Rectangle -7500403 true true 76 194 285 270
+Rectangle -7500403 true true 36 95 59 231
+Rectangle -16777216 true false 90 210 270 240
+Line -7500403 true 90 195 90 255
+Line -7500403 true 120 195 120 255
+Line -7500403 true 150 195 150 240
+Line -7500403 true 180 195 180 255
+Line -7500403 true 210 210 210 240
+Line -7500403 true 240 210 240 240
+Line -7500403 true 90 225 270 225
+Circle -1 true false 37 73 32
+Circle -1 true false 55 38 54
+Circle -1 true false 96 21 42
+Circle -1 true false 105 40 32
+Circle -1 true false 129 19 42
+Rectangle -7500403 true true 14 228 78 270
 
 fish
 false
@@ -758,7 +872,7 @@ false
 Polygon -7500403 true true 270 75 225 30 30 225 75 270
 Polygon -7500403 true true 30 75 75 30 270 225 225 270
 @#$#@#$#@
-NetLogo 6.0.4
+NetLogo 6.0.3
 @#$#@#$#@
 @#$#@#$#@
 @#$#@#$#@
