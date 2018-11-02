@@ -123,7 +123,7 @@ to municipality-initialize
     set SP 0                                                            ; collected in this month. zero at the begining of each month
     set RSP 0                                                           ; collected in this month. zero at the begining of each month
     set target-knowledge-investment-tendency (0.25 + random 4 / 4)
-    set price-knowledge-investment-tendency (0.25 + random 4 / 4) * 12
+    set price-knowledge-investment-tendency ((random 6 + 1) * 3)
     set investment-importance (0.5 + random 2 / 2)
     set investment-knowledge-recycling (0.5 + random 2 / 2)
   ]
@@ -147,6 +147,7 @@ end
 
 
 to go
+
   if (remainder ticks month-before-target-increase = 0 and ticks != 0)
   [
     set recycling-target (min list (recycling-target + recycling-target-increase / 100) 1)
@@ -197,6 +198,7 @@ to go
       set label expenditure
   ]
   tick
+  if ticks = 240 [stop]
 end
 
 ;; general procedures
@@ -278,11 +280,8 @@ to check-target-investment-necessity
 end
 
 to check-price-investment-necessity
-  foreach [base-price] of my-contracts [ the-price ->
-    if the-price > last-contract-base-price-mean[
-      invest-in-knowledge price-knowledge-investment-tendency
-      stop
-    ]
+  if mean [base-price] of my-contracts >= last-contract-base-price-mean[
+    invest-in-knowledge price-knowledge-investment-tendency
   ]
 end
 
@@ -291,8 +290,6 @@ to invest-in-knowledge [tendency]
     set expenditure (expenditure + investment-cost * tendency)
     set beta1 min list (beta1 + investment-importance * investment-multiplier * tendency) 1
     set beta2 min list (beta2 + investment-knowledge-recycling * investment-multiplier * tendency) 1
-    ;print beta1
-
   ]
 end
 
@@ -307,9 +304,9 @@ to create-offer ;RC command
         let ersp temp2 * recyclable-separated-waste                              ;;extractable recyclable waste from recyclable separated waste
         let ernsp temp2 * temp2 * (total-waste - separated-waste)                ;;extractable recyclable waste from non-separated waste
         set proposed-recycling-rate ((ersp + ernsp) / total-waste)               ;;recycling target proposed based on RCs ability to extract recyclable waste from total waste
-        set base-price ((0.9 + random 0.2) * 0.5 + (3 * temp2 - (separated-waste / total-waste)  - (recyclable-separated-waste / separated-waste)) * 0.5) ;;fixed cost plus vairable cost
+        set base-price ((0.9 + random-float 0.2) * 0.5 + (3 * temp2 - (separated-waste / total-waste)  - (recyclable-separated-waste / separated-waste)) * 0.5) ;;fixed cost plus vairable cost
         ;;perhaps something from collection type should also be included here. If yes, it has to be added as part of the offer requested from municipality
-        set m 1.2 + random 0.3                                                   ;;m is a random factor (1.2, 1.5)
+        set m 1.2 + random-float 0.3                                                   ;;m is a random factor (1.2, 1.5)
         set proposed-capacity min list temp1 total-waste                         ;;Update offer link with remaining capacity of the RC
       ]
     ]
@@ -450,8 +447,8 @@ SLIDER
 recycling-target-increase
 recycling-target-increase
 0
-10
-1.0
+5
+5.0
 1
 1
 percent
@@ -466,7 +463,7 @@ month-before-target-increase
 month-before-target-increase
 12
 60
-24.0
+30.0
 1
 1
 NIL
@@ -481,7 +478,7 @@ technology-increase
 technology-increase
 0
 5
-2.0
+1.0
 0.5
 1
 percent
@@ -496,7 +493,7 @@ month-before-technology-increase
 month-before-technology-increase
 12
 60
-36.0
+12.0
 1
 1
 NIL
