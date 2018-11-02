@@ -123,7 +123,7 @@ to municipality-initialize
     set SP 0                                                            ; collected in this month. zero at the begining of each month
     set RSP 0                                                           ; collected in this month. zero at the begining of each month
     set target-knowledge-investment-tendency (0.25 + random 4 / 4)
-    set price-knowledge-investment-tendency (0.25 + random 4 / 4) * 12
+    set price-knowledge-investment-tendency (0.25 + random 4 / 4) * 1
     set investment-importance (0.5 + random 2 / 2)
     set investment-knowledge-recycling (0.5 + random 2 / 2)
   ]
@@ -281,6 +281,7 @@ to check-price-investment-necessity
   foreach [base-price] of my-contracts [ the-price ->
     if the-price > last-contract-base-price-mean[
       invest-in-knowledge price-knowledge-investment-tendency
+      print beta1
       stop
     ]
   ]
