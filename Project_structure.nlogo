@@ -8,12 +8,9 @@ globals [
   theta-family
   theta-couple
   TTW  ; Total waste expected to be generated from all municipalities
-  investment-multiplier ; new line ; adjusts how much each knowledge factor needs to be increased by investment in knowledge
-  investment-cost ;new line ; what is the cost of each investment
-  offer-utility ; new line ; to see how good each new contract is
-  cheapest-base-price ; new line ; to know cheapest base price
-  candidate-offer ; new line ; to know which offer has the highest utility
-  candidate-RC ; new line ; to know who has offered the candidate-offer
+  investment-multiplier ; adjusts how much each knowledge factor needs to be increased by investment in knowledge
+  betas-decrease-multiplier
+  investment-cost ; what is the cost of each investment
 ]
 
 breed [municipalities municipality]
@@ -24,10 +21,10 @@ undirected-link-breed [contracts contract]
 
 municipalities-own [
   num-household
-  pop-old
-  pop-single
-  pop-family
-  pop-couple
+  num-household-old
+  num-household-single
+  num-household-family
+  num-household-couple
   mu ; collection infrastructure factor
   centralized? ; collection infrastructure type
   expenditure
@@ -39,9 +36,10 @@ municipalities-own [
   remaining-waste-fraction
   price-knowledge-investment-tendency ; to see different behaviors of knowledge investment for behavior analysis
   target-knowledge-investment-tendency
-  investment-importance
-  investment-knowledge-recycling
+  invest-in-recycling-importance
+  invest-in-recycling-knowledge
   last-contract-base-price-mean
+  invest-in-status-quo?
 ]
 
 RCs-own[
@@ -90,23 +88,19 @@ to global-initialize
   set theta-family 1
   set theta-couple 0.8
   set TTW  0
-  set investment-multiplier 0.002            ;; increase in beta1 and beta 2 with investment in knowledge
-  set investment-cost 5                  ;;assumption that each investment in policy costs around 5000 euros
-  set offer-utility 0
-  set cheapest-base-price 0
-  set candidate-offer 0
-  set candidate-RC 0
+  set investment-multiplier 0.002        ;; increase in beta1 and beta 2 with investment in knowledge
+  set betas-decrease-multiplier 0.0005
+  set investment-cost 10               ;;assumption that each investment in policy costs around 10000 euros
 
 end
 
 to municipality-initialize
-  create-ordered-municipalities num-municipalities
-  ask municipalities [
-    set num-household (1000 + random 500)
-    set pop-old 0.2 * num-household
-    set pop-single 0.25 * num-household
-    set pop-family 0.30 * num-household
-    set pop-couple 0.25 * num-household
+  create-ordered-municipalities num-municipalities [
+    set num-household (11000 + random 50000)
+    set num-household-old 0.2 * num-household
+    set num-household-single 0.25 * num-household
+    set num-household-family 0.30 * num-household
+    set num-household-couple 0.25 * num-household
     ifelse random 2 = 0
     [
       set centralized? False
@@ -126,20 +120,22 @@ to municipality-initialize
     set price-knowledge-investment-tendency ((random 6 + 1) * 3)
     let temp random 3
     ifelse temp = 0
-    [ set investment-importance 1
-      set investment-knowledge-recycling 1]
+    [ set invest-in-recycling-importance 1
+      set invest-in-recycling-knowledge 1]
     [ ifelse temp = 1
-      [  set investment-importance 1
-         set investment-knowledge-recycling 0]
-      [  set investment-importance 0
-         set investment-knowledge-recycling 1]]
+      [  set invest-in-recycling-importance 1
+         set invest-in-recycling-knowledge 0.5]
+      [  set invest-in-recycling-importance 0.5
+         set invest-in-recycling-knowledge 1]]
+    set invest-in-status-quo? one-of list true false
   ]
+
 end
 
 to RC-initialize
   create-ordered-RCs num-RC
   ask RCs[
-    set alpha (0.5 + random-float 0.2)                                        ;;the sorting factor of each company is set to a random value
+    set alpha (0.4 + random-float 0.2)                                  ;;the sorting factor of each company is set to a random value
     set capacity (TTW / num-RC * 1.15)                                  ;;capacity is set to be an equal proportion of the total waste expected to be generated from all the municipalities
     set remaining-capacity capacity                                     ;;the remaining capacity is equal to the total capacity of the RC at the start of the model run
   ]
@@ -157,18 +153,18 @@ to go
 
   if (remainder ticks month-before-target-increase = 0 and ticks != 0)
   [
-    set recycling-target (min list (recycling-target + recycling-target-increase / 100) 1)
+    set recycling-target (min list (recycling-target + recycling-target-increase / 100) 0.9)
   ]
 
   if (remainder ticks month-before-technology-increase = 0 and ticks != 0)
   [
     ask RCs[
-      set alpha (min list (alpha + technology-increase / 100) 1)
+      set alpha (min list (alpha + technology-increase / 100) 0.9)
     ]
   ]
 
-  ask municipalities [ ;new line
-    set TW 0 ;new line
+  ask municipalities [
+    set TW 0
     set SP 0 ;new line
     set RSP 0 ;new line
   ] ;new line
@@ -202,10 +198,11 @@ to go
     check-target-investment-necessity
   ]
   ask municipalities [
-      set label expenditure
+    set label round expenditure
+    decrease-betas
   ]
   tick
-  if ticks = 240 [stop]
+  if ticks >= 240 [stop]
 end
 
 ;; general procedures
@@ -214,23 +211,26 @@ to visualize
   [
     fd 15
     set color blue
+    set size num-household / min [num-household] of municipalities
   ]
   ask RCs
   [
     fd 10
     set color orange
+    set size 2
   ]
 end
 
 ;; municipality procedures:
 to produce-waste [ month-no ] ; municipality command
-  set TW (TW + (waste-function month-no) * (pop-old * theta-old + pop-family * theta-family + pop-family * theta-family + pop-single * theta-single))
-  set SP TW * beta1 * mu
-  set RSP min (list (beta2 * SP) (eta * TW))
+  set TW (TW + (waste-function month-no) * (num-household-old * theta-old + num-household-family * theta-family + num-household-family * theta-family + num-household-single * theta-single))
+  set RSP TW * beta1 * mu * eta
+  set SP (RSP + (1 - beta2) * (TW - RSP))
+
 end
 
 to-report waste-function [x]
-  report ((40 - 0.04 * x - exp(-0.01 * x) * sin(0.3 * x)) / 1000)
+  report ((40 - 0.04 * x - exp(-0.01 * x) * sin(0.3 * x)) / 1000000)
 end
 
 to request-offer ; municipality command
@@ -246,8 +246,10 @@ to request-offer ; municipality command
 end
 
 to establish-contract ; municipality command
-  set cheapest-base-price min ([base-price] of my-offers)
-  set candidate-offer one-of my-offers
+  let cheapest-base-price min ([base-price] of my-offers)
+  let candidate-offer one-of my-offers
+  let offer-utility 0
+  let candidate-RC one-of RCs
   ask candidate-offer [
     set offer-utility ((min list recycling-target proposed-recycling-rate) / recycling-target * 2 + cheapest-base-price / base-price)
   ]
@@ -288,15 +290,24 @@ end
 
 to check-price-investment-necessity
   if mean [base-price] of my-contracts >= last-contract-base-price-mean[
-    invest-in-knowledge price-knowledge-investment-tendency
+    invest-in-knowledge (price-knowledge-investment-tendency * mean [base-price] of my-contracts / last-contract-base-price-mean)
   ]
 end
 
 to invest-in-knowledge [tendency]
-  if (beta1 < 1) or (beta2 < 1)[
-    set expenditure (expenditure + investment-cost * tendency)
-    set beta1 min list (beta1 + investment-importance * investment-multiplier * tendency) 1
-    set beta2 min list (beta2 + investment-knowledge-recycling * investment-multiplier * tendency) 1
+  if (beta1 < 0.9) or (beta2 < 0.9)[
+    set expenditure (expenditure + investment-cost * tendency * (invest-in-recycling-importance + invest-in-recycling-knowledge))
+    set beta1 min list (beta1 + invest-in-recycling-importance * investment-multiplier * tendency) 0.9
+    set beta2 min list (beta2 + invest-in-recycling-knowledge * investment-multiplier * tendency) 0.9
+  ]
+end
+
+to decrease-betas
+  ifelse invest-in-status-quo? = true
+  [ set expenditure (expenditure + investment-cost / investment-multiplier * betas-decrease-multiplier)]
+  [
+    set beta1 max list 0.4 (beta1 - betas-decrease-multiplier)
+    set beta2 max list 0.3 (beta2 - betas-decrease-multiplier)
   ]
 end
 
@@ -312,7 +323,7 @@ to create-offer ;RC command
       let ersp temp2 * recyclable-separated-waste                              ;;extractable recyclable waste from recyclable separated waste
       let ernsp temp2 * temp2 * ((eta * total-waste) - recyclable-separated-waste);;extractable recyclable waste from recyclable non-separated waste
       set proposed-recycling-rate ((ersp + ernsp) / (eta * total-waste))       ;;recycling target proposed based on RCs ability to extract recyclable waste from total recyclable plastics
-      set base-price ((0.9 + random-float 0.2) * 0.5 + max list (([alpha] of myself / minimum-alpha - (separated-waste / total-waste)  - (recyclable-separated-waste / separated-waste)) * 0.5) 0)
+      set base-price ((0.9 + random-float 0.1) * 50 + max list (([alpha] of myself / minimum-alpha - (separated-waste / total-waste)  - (recyclable-separated-waste / separated-waste)) * 50) 0)
       if [centralized?] of other-end = False
       [
         set base-price base-price * 1.1                                        ;;RCs charge more base price if collection infrastructure is decentralized
@@ -472,7 +483,7 @@ month-before-target-increase
 month-before-target-increase
 12
 60
-13.0
+12.0
 1
 1
 NIL
@@ -502,7 +513,7 @@ month-before-technology-increase
 month-before-technology-increase
 12
 60
-12.0
+26.0
 1
 1
 NIL
@@ -892,6 +903,25 @@ NetLogo 6.0.3
 @#$#@#$#@
 @#$#@#$#@
 @#$#@#$#@
+<experiments>
+  <experiment name="experiment" repetitions="1" runMetricsEveryStep="true">
+    <setup>setup</setup>
+    <go>go</go>
+    <metric>count turtles</metric>
+    <enumeratedValueSet variable="month-before-technology-increase">
+      <value value="26"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="technology-increase">
+      <value value="0"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="recycling-target-increase">
+      <value value="5"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="month-before-target-increase">
+      <value value="12"/>
+    </enumeratedValueSet>
+  </experiment>
+</experiments>
 @#$#@#$#@
 @#$#@#$#@
 default
