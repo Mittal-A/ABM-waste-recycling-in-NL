@@ -135,7 +135,7 @@ end
 to RC-initialize
   create-ordered-RCs num-RC
   ask RCs[
-    set alpha (0.4 + random-float 0.2)                                  ;;the sorting factor of each company is set to a random value
+    set alpha (0.4 + random 5 * 0.05)                                  ;;the sorting factor of each company is set to a random value
     set capacity (TTW / num-RC * 1.15)                                  ;;capacity is set to be an equal proportion of the total waste expected to be generated from all the municipalities
     set remaining-capacity capacity                                     ;;the remaining capacity is equal to the total capacity of the RC at the start of the model run
   ]
