@@ -98,10 +98,10 @@ end
 to municipality-initialize
   create-ordered-municipalities num-municipalities [
     set num-household (11000 + random 50000)
-    set num-household-old 0.2 * num-household
-    set num-household-single 0.25 * num-household
-    set num-household-family 0.30 * num-household
-    set num-household-couple 0.25 * num-household
+    set num-household-old round (0.2 * num-household)
+    set num-household-single round (0.25 * num-household)
+    set num-household-family round (0.30 * num-household)
+    set num-household-couple round (0.25 * num-household)
     ifelse random 2 = 0
     [
       set centralized? False
@@ -182,7 +182,7 @@ to visualize
   ask municipalities
   [
     fd 15
-    set color blue
+    set color 10 * who + 5
     set size num-household / min [num-household] of municipalities
   ]
   ask RCs
@@ -492,7 +492,7 @@ recycling-target-increase
 recycling-target-increase
 0
 5
-0.0
+5.0
 1
 1
 percent
@@ -522,7 +522,7 @@ technology-increase
 technology-increase
 0
 5
-1.0
+4.0
 1
 1
 percent
@@ -537,7 +537,7 @@ month-before-technology-increase
 month-before-technology-increase
 12
 60
-12.0
+48.0
 1
 1
 NIL
