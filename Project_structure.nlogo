@@ -40,6 +40,7 @@ municipalities-own [
   invest-in-recycling-knowledge
   last-contract-base-price-mean
   invest-in-status-quo?
+  average-recycling-rate-met
 ]
 
 RCs-own[
@@ -90,7 +91,7 @@ to global-initialize
   set TTW  0
   set investment-multiplier 0.002        ;; increase in beta1 and beta 2 with investment in knowledge
   set betas-decrease-multiplier 0.0005
-  set investment-cost 10               ;;assumption that each investment in policy costs around 10000 euros
+  set investment-cost 20               ;;assumption that each investment in policy costs around 20000 euros
 
 end
 
@@ -123,10 +124,10 @@ to municipality-initialize
     [ set invest-in-recycling-importance 1
       set invest-in-recycling-knowledge 1]
     [ ifelse temp = 1
-      [  set invest-in-recycling-importance 1
+      [  set invest-in-recycling-importance 1.5
          set invest-in-recycling-knowledge 0.5]
       [  set invest-in-recycling-importance 0.5
-         set invest-in-recycling-knowledge 1]]
+         set invest-in-recycling-knowledge 1.5]]
     set invest-in-status-quo? one-of list true false
   ]
 
@@ -151,61 +152,32 @@ end
 
 to go
 
-  if (remainder ticks month-before-target-increase = 0 and ticks != 0)
-  [
-    set recycling-target (min list (recycling-target + recycling-target-increase / 100) 0.9)
-  ]
-
-  if (remainder ticks month-before-technology-increase = 0 and ticks != 0)
-  [
-    ask RCs[
-      set alpha (min list (alpha + technology-increase / 100) 0.9)
-    ]
-  ]
-
-  ask municipalities [
-    set TW 0
-    set SP 0 ;new line
-    set RSP 0 ;new line
-  ] ;new line
+  technology-progress
+  target-change
 
   ask municipalities [ produce-waste ticks]
 
   if remainder ticks 36 = 0 [
-    if ticks != 0 [
-      ask municipalities [set last-contract-base-price-mean mean [base-price] of my-contracts]
-    ]
-    ask municipalities [set remaining-waste-fraction 1]
-    ask contracts [die] ; removing previous contracts to build new contracts
-    ask RCs [set remaining-capacity capacity]
-    foreach sort-on [beta1 * beta2 * mu] municipalities [ the-municipality ->
-      ask the-municipality [
-        while [[remaining-waste-fraction] of self > 0] [
-          request-offer
-          ask RCs [create-offer]
-          establish-contract ; municipality chooses the contract it wants and make a contract link based on that ; if an offer is established, left cacpacity of that RC should be updated
-          ask offers [die] ; removing the offers before going to the next municipality
-        ]
-        if ticks != 0 [
-          check-price-investment-necessity
-        ]
-
-      ]
-    ]
+    last-contract-history
+    clear-previous-contracts
+    contract-procedure
   ]
+
   ask RCs [process-waste] ; it should update expenditure of the related municipality by base price and fine as well
+
   ask municipalities [
     check-target-investment-necessity
-  ]
-  ask municipalities [
     set label round expenditure
     decrease-betas
+    check-recycling-rate
   ]
+
   tick
   if ticks >= 240 [stop]
 end
 
-;; general procedures
+;; general procedures:
+
 to visualize
   ask municipalities
   [
@@ -221,9 +193,56 @@ to visualize
   ]
 end
 
+to target-change
+
+  if (remainder ticks month-before-technology-increase = 0 and ticks != 0)
+  [
+    ask RCs[
+      set alpha (min list (alpha + technology-increase / 100) 0.9)
+    ]
+  ]
+end
+
+to technology-progress
+  if (remainder ticks month-before-target-increase = 0 and ticks != 0)
+  [
+    set recycling-target (min list (recycling-target + recycling-target-increase / 100) 0.9)
+  ]
+end
+
+to clear-previous-contracts
+  ask municipalities [set remaining-waste-fraction 1]
+  ask contracts [die] ; removing previous contracts to build new contracts
+  ask RCs [set remaining-capacity capacity]
+end
+
+to last-contract-history
+  if ticks != 0 [
+    ask municipalities [set last-contract-base-price-mean mean [base-price] of my-contracts]
+  ]
+end
+
+to contract-procedure
+  foreach sort-on [beta1 * beta2 * mu] municipalities [ the-municipality ->
+    ask the-municipality [
+      while [[remaining-waste-fraction] of self > 0] [
+        request-offer
+        ask RCs [create-offer]
+        establish-contract ; municipality chooses the contract it wants and make a contract link based on that ; if an offer is established, left cacpacity of that RC should be updated
+        ask offers [die] ; removing the offers before going to the next municipality
+      ]
+      if ticks != 0 [
+        check-price-investment-necessity
+      ]
+    ]
+  ]
+end
+
 ;; municipality procedures:
-to produce-waste [ month-no ] ; municipality command
-  set TW (TW + (waste-function month-no) * (num-household-old * theta-old + num-household-family * theta-family + num-household-family * theta-family + num-household-single * theta-single))
+
+to produce-waste [ month-no ]
+
+  set TW ((waste-function month-no) * (num-household-old * theta-old + num-household-family * theta-family + num-household-family * theta-family + num-household-single * theta-single))
   set RSP TW * beta1 * mu * eta
   set SP (RSP + (1 - beta2) * (TW - RSP))
 
@@ -233,7 +252,7 @@ to-report waste-function [x]
   report ((40 - 0.04 * x - exp(-0.01 * x) * sin(0.3 * x)) / 1000000)
 end
 
-to request-offer ; municipality command
+to request-offer
   create-offers-with RCs [
     set base-price 0
     set total-waste ([TW] of myself * max list [remaining-waste-fraction] of myself 0)
@@ -245,7 +264,7 @@ to request-offer ; municipality command
   ]
 end
 
-to establish-contract ; municipality command
+to establish-contract
   let cheapest-base-price min ([base-price] of my-offers)
   let candidate-offer one-of my-offers
   let offer-utility 0
@@ -311,8 +330,13 @@ to decrease-betas
   ]
 end
 
+to check-recycling-rate
+  set average-recycling-rate-met mean [recycling-rate-met] of my-contracts
+end
+
 ;; RC procedures:
-to create-offer ;RC command
+
+to create-offer
   let temp1 remaining-capacity
   let temp2 alpha
   let minimum-alpha min [alpha] of RCs
@@ -323,7 +347,7 @@ to create-offer ;RC command
       let ersp temp2 * recyclable-separated-waste                              ;;extractable recyclable waste from recyclable separated waste
       let ernsp temp2 * temp2 * ((eta * total-waste) - recyclable-separated-waste);;extractable recyclable waste from recyclable non-separated waste
       set proposed-recycling-rate ((ersp + ernsp) / (eta * total-waste))       ;;recycling target proposed based on RCs ability to extract recyclable waste from total recyclable plastics
-      set base-price ((0.9 + random-float 0.1) * 50 + max list (([alpha] of myself / minimum-alpha - (separated-waste / total-waste)  - (recyclable-separated-waste / separated-waste)) * 50) 0)
+      set base-price ((0.9 + random-float 0.1) * 100 + max list (([alpha] of myself / minimum-alpha - (separated-waste / total-waste)  - (recyclable-separated-waste / separated-waste)) * 100) 0)
       if [centralized?] of other-end = False
       [
         set base-price base-price * 1.1                                        ;;RCs charge more base price if collection infrastructure is decentralized
@@ -338,7 +362,7 @@ to create-offer ;RC command
   ]
 end
 
-to process-waste ;RC command
+to process-waste
   let tech alpha
   ask my-contracts                                                               ;;for each contract in my contracts
   [
@@ -364,9 +388,9 @@ to process-waste ;RC command
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
-210
+6
 10
-647
+443
 448
 -1
 -1
@@ -391,10 +415,10 @@ ticks
 30.0
 
 BUTTON
-14
-53
-77
-86
+293
+457
+356
+490
 NIL
 setup
 NIL
@@ -408,10 +432,10 @@ NIL
 1
 
 BUTTON
-99
-98
-187
-131
+282
+536
+370
+569
 go-always
 go
 T
@@ -425,10 +449,10 @@ NIL
 1
 
 BUTTON
-6
-97
-83
-130
+288
+497
+365
+530
 go-once
 go
 NIL
@@ -442,15 +466,15 @@ NIL
 1
 
 PLOT
-1080
-94
-1280
-244
-Recycling target met
+522
+16
+722
+166
+Average recycling target met
 NIL
 NIL
 0.0
-10.0
+250.0
 0.0
 1.0
 true
@@ -460,25 +484,25 @@ PENS
 "default" 1.0 0 -16777216 true "" "if count contracts > 0[\nlet x 0\nask contracts[\n set x x + recycling-rate-met\n]\nplot x / count contracts]"
 
 SLIDER
-688
-157
-927
-190
+7
+455
+246
+488
 recycling-target-increase
 recycling-target-increase
 0
 5
-5.0
+0.0
 1
 1
 percent
 HORIZONTAL
 
 SLIDER
-686
-204
-902
-237
+6
+494
+245
+527
 month-before-target-increase
 month-before-target-increase
 12
@@ -490,52 +514,139 @@ NIL
 HORIZONTAL
 
 SLIDER
-689
-252
-1012
-285
+6
+530
+245
+563
 technology-increase
 technology-increase
 0
 5
-0.0
-0.1
+1.0
+1
 1
 percent
 HORIZONTAL
 
 SLIDER
-691
-311
-933
-344
+6
+567
+248
+600
 month-before-technology-increase
 month-before-technology-increase
 12
 60
-26.0
+12.0
 1
 1
 NIL
 HORIZONTAL
 
 PLOT
-1081
-284
-1281
-434
-Average mun. expenditure
+523
+222
+723
+372
+Average monthly mun. expenditure
 NIL
 NIL
 0.0
-10.0
+250.0
 0.0
 10.0
 true
 false
 "" ""
 PENS
-"default" 1.0 0 -16777216 true "" "let x 0\nask municipalities[\nset x (x + expenditure)\n]\nplot x / count municipalities"
+"default" 1.0 0 -16777216 true "" "if ticks != 0[\n  let x 0\n  ask municipalities[\n    set x (x + expenditure)\n  ]\n  plot x / count municipalities / ticks]"
+
+PLOT
+528
+430
+728
+580
+Average betas
+NIL
+NIL
+0.0
+250.0
+0.0
+1.0
+true
+true
+"" ""
+PENS
+"beta1" 1.0 0 -2674135 true "" "let x 0\nask municipalities[\n set x x + beta1\n]\nplot x / count municipalities"
+"beta2" 1.0 0 -13345367 true "" "let x 0\nask municipalities[\n set x x + beta2\n]\nplot x / count municipalities"
+
+PLOT
+750
+272
+1113
+505
+Municipalities beta1
+NIL
+NIL
+0.0
+250.0
+0.3
+1.0
+true
+false
+"foreach [who] of municipalities[ the-who -> \ncreate-temporary-plot-pen (word the-who)\nset-current-plot-pen (word the-who)\nset-plot-pen-color 10 * the-who + 5]" "foreach sort municipalities[ the-municipality ->\n   set-current-plot-pen (word ([who] of the-municipality))\n   plot [beta1] of the-municipality\n ]"
+PENS
+
+PLOT
+1122
+273
+1491
+504
+municipalities beta2
+NIL
+NIL
+0.0
+250.0
+0.3
+1.0
+true
+false
+"foreach [who] of municipalities[ the-who -> \ncreate-temporary-plot-pen (word the-who)\nset-current-plot-pen (word the-who)\nset-plot-pen-color 10 * the-who + 5]" "foreach sort municipalities[ the-municipality ->\n   set-current-plot-pen (word ([who] of the-municipality))\n   plot [beta2] of the-municipality\n ]"
+PENS
+
+PLOT
+747
+25
+1111
+254
+Average municipalities expenditure per month per household
+NIL
+NIL
+0.0
+250.0
+0.0
+8.0
+true
+false
+"foreach [who] of municipalities[ the-who -> \ncreate-temporary-plot-pen (word the-who)\nset-current-plot-pen (word the-who)\nset-plot-pen-color 10 * the-who + 5]" "foreach sort municipalities[ the-municipality ->\n   set-current-plot-pen (word ([who] of the-municipality))\n   if ticks != 0[plot [expenditure] of the-municipality / ticks / [num-household] of the-municipality * 1000]\n ]"
+PENS
+
+PLOT
+1123
+26
+1483
+256
+Average municipalities recycling rate
+NIL
+NIL
+0.0
+250.0
+0.3
+0.5
+true
+false
+"foreach [who] of municipalities[ the-who -> \ncreate-temporary-plot-pen (word the-who)\nset-current-plot-pen (word the-who)\nset-plot-pen-color 10 * the-who + 5]" "foreach sort municipalities[ the-municipality ->\n   set-current-plot-pen (word ([who] of the-municipality))\n   if ticks != 0 [plot [average-recycling-rate-met] of the-municipality]\n ]"
+PENS
 
 @#$#@#$#@
 ## WHAT IS IT?
