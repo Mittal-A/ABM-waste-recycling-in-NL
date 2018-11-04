@@ -124,8 +124,15 @@ to municipality-initialize
     set RSP 0                                                           ; collected in this month. zero at the begining of each month
     set target-knowledge-investment-tendency (0.25 + random 4 / 4)
     set price-knowledge-investment-tendency ((random 6 + 1) * 3)
-    set investment-importance (0.5 + random 2 / 2)
-    set investment-knowledge-recycling (0.5 + random 2 / 2)
+    let temp random 3
+    ifelse temp = 0
+    [ set investment-importance 1
+      set investment-knowledge-recycling 1]
+    [ ifelse temp = 1
+      [  set investment-importance 1
+         set investment-knowledge-recycling 0]
+      [  set investment-importance 0
+         set investment-knowledge-recycling 1]]
   ]
 end
 
@@ -295,28 +302,29 @@ end
 
 ;; RC procedures:
 to create-offer ;RC command
-    let temp1 remaining-capacity
-    let temp2 alpha
-    ifelse remaining-capacity > 0
+  let temp1 remaining-capacity
+  let temp2 alpha
+  let minimum-alpha min [alpha] of RCs
+  ifelse remaining-capacity > 0
+  [
+    ask my-offers
     [
-      ask my-offers
+      let ersp temp2 * recyclable-separated-waste                              ;;extractable recyclable waste from recyclable separated waste
+      let ernsp temp2 * temp2 * ((eta * total-waste) - recyclable-separated-waste);;extractable recyclable waste from recyclable non-separated waste
+      set proposed-recycling-rate ((ersp + ernsp) / (eta * total-waste))       ;;recycling target proposed based on RCs ability to extract recyclable waste from total recyclable plastics
+      set base-price ((0.9 + random-float 0.2) * 0.5 + max list (([alpha] of myself / minimum-alpha - (separated-waste / total-waste)  - (recyclable-separated-waste / separated-waste)) * 0.5) 0)
+      if [centralized?] of other-end = False
       [
-        let ersp temp2 * recyclable-separated-waste                              ;;extractable recyclable waste from recyclable separated waste
-        let ernsp temp2 * temp2 * ((eta * total-waste) - recyclable-separated-waste);;extractable recyclable waste from recyclable non-separated waste
-        set proposed-recycling-rate ((ersp + ernsp) / (eta * total-waste))       ;;recycling target proposed based on RCs ability to extract recyclable waste from total recyclable plastics
-        set base-price ((0.9 + random-float 0.2) * 0.5 + max list ((2 * temp2 - (separated-waste / total-waste)  - (recyclable-separated-waste / separated-waste)) * 0.5) 0)
-        if [centralized?] of other-end = False
-        [
-          set base-price base-price * 1.1                                        ;;RCs charge more base price if collection infrastructure is decentralized
-        ]
-        set m 1.2 + random-float 0.3                                             ;;m is a random factor (1.2, 1.5)
-        set proposed-capacity min list temp1 total-waste                         ;;Update offer link with remaining capacity of the RC
+        set base-price base-price * 1.1                                        ;;RCs charge more base price if collection infrastructure is decentralized
       ]
+      set m 1.2 + random-float 0.3                                             ;;m is a random factor (1.2, 1.5)
+      set proposed-capacity min list temp1 total-waste                         ;;Update offer link with remaining capacity of the RC
     ]
-    [
-      ask my-offers                                                              ;;undo the offers requested from the company if there is no capacity left to be offered
-      [die]
-    ]
+  ]
+  [
+    ask my-offers                                                              ;;undo the offers requested from the company if there is no capacity left to be offered
+    [die]
+  ]
 end
 
 to process-waste ;RC command
@@ -464,7 +472,7 @@ month-before-target-increase
 month-before-target-increase
 12
 60
-30.0
+13.0
 1
 1
 NIL
@@ -479,7 +487,7 @@ technology-increase
 technology-increase
 0
 5
-0.1
+0.0
 0.1
 1
 percent
@@ -494,7 +502,7 @@ month-before-technology-increase
 month-before-technology-increase
 12
 60
-47.0
+12.0
 1
 1
 NIL
@@ -880,7 +888,7 @@ false
 Polygon -7500403 true true 270 75 225 30 30 225 75 270
 Polygon -7500403 true true 30 75 75 30 270 225 225 270
 @#$#@#$#@
-NetLogo 6.0.4
+NetLogo 6.0.3
 @#$#@#$#@
 @#$#@#$#@
 @#$#@#$#@
