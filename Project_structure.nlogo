@@ -386,6 +386,17 @@ to process-waste
     ]
   ]
 end
+
+to-report municipality-stats [x]
+  let money round [expenditure] of municipality x
+  let rate precision ([average-recycling-rate-met] of municipality x) 2
+  let importance precision ([beta1] of municipality x) 2
+  let knowledge precision ([beta2] of municipality x) 2
+  let met? True
+  if [average-recycling-rate-met] of municipality x < recycling-target
+  [ set met? False ]
+  report (word money "," rate "," importance "," knowledge "," met?)
+end
 @#$#@#$#@
 GRAPHICS-WINDOW
 6
@@ -507,7 +518,7 @@ month-before-target-increase
 month-before-target-increase
 12
 60
-12.0
+48.0
 1
 1
 NIL
@@ -522,7 +533,7 @@ technology-increase
 technology-increase
 0
 5
-4.0
+5.0
 1
 1
 percent
@@ -1010,23 +1021,68 @@ false
 Polygon -7500403 true true 270 75 225 30 30 225 75 270
 Polygon -7500403 true true 30 75 75 30 270 225 225 270
 @#$#@#$#@
-NetLogo 6.0.3
+NetLogo 6.0.4
 @#$#@#$#@
 @#$#@#$#@
 @#$#@#$#@
 <experiments>
-  <experiment name="experiment" repetitions="1" runMetricsEveryStep="true">
+  <experiment name="Main experiment" repetitions="5" runMetricsEveryStep="true">
     <setup>setup</setup>
     <go>go</go>
-    <metric>count turtles</metric>
+    <timeLimit steps="240"/>
+    <metric>municipality-stats 0</metric>
+    <metric>municipality-stats 1</metric>
+    <metric>municipality-stats 2</metric>
+    <metric>municipality-stats 3</metric>
+    <metric>municipality-stats 4</metric>
+    <metric>municipality-stats 5</metric>
+    <metric>municipality-stats 6</metric>
+    <metric>municipality-stats 7</metric>
+    <metric>municipality-stats 8</metric>
+    <metric>municipality-stats 9</metric>
     <enumeratedValueSet variable="month-before-technology-increase">
-      <value value="26"/>
+      <value value="12"/>
+      <value value="24"/>
+      <value value="36"/>
+      <value value="48"/>
     </enumeratedValueSet>
     <enumeratedValueSet variable="technology-increase">
-      <value value="0"/>
+      <value value="1"/>
+      <value value="5"/>
     </enumeratedValueSet>
     <enumeratedValueSet variable="recycling-target-increase">
+      <value value="1"/>
       <value value="5"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="month-before-target-increase">
+      <value value="12"/>
+      <value value="24"/>
+      <value value="36"/>
+      <value value="48"/>
+    </enumeratedValueSet>
+  </experiment>
+  <experiment name="Test experiment" repetitions="10" runMetricsEveryStep="true">
+    <setup>setup</setup>
+    <go>go</go>
+    <timeLimit steps="240"/>
+    <metric>municipality-stats 0</metric>
+    <metric>municipality-stats 1</metric>
+    <metric>municipality-stats 2</metric>
+    <metric>municipality-stats 3</metric>
+    <metric>municipality-stats 4</metric>
+    <metric>municipality-stats 5</metric>
+    <metric>municipality-stats 6</metric>
+    <metric>municipality-stats 7</metric>
+    <metric>municipality-stats 8</metric>
+    <metric>municipality-stats 9</metric>
+    <enumeratedValueSet variable="month-before-technology-increase">
+      <value value="12"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="technology-increase">
+      <value value="4"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="recycling-target-increase">
+      <value value="1"/>
     </enumeratedValueSet>
     <enumeratedValueSet variable="month-before-target-increase">
       <value value="12"/>
