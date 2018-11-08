@@ -41,6 +41,8 @@ municipalities-own [
   last-contract-base-price-mean
   invest-in-status-quo?
   average-recycling-rate-met
+  target-failure-months
+  target-importance
 ]
 
 RCs-own[
@@ -81,8 +83,8 @@ end
 
 to global-initialize
   set recycling-target 0.5
-  set num-municipalities 10
-  set num-RC 5
+  set num-municipalities 8
+  set num-RC 4
   set eta 0.35
   set theta-old 0.3
   set theta-single 0.5
@@ -92,7 +94,6 @@ to global-initialize
   set investment-multiplier 0.002        ;; increase in beta1 and beta 2 with investment in knowledge
   set betas-decrease-multiplier 0.0005
   set investment-cost 20               ;;assumption that each investment in policy costs around 20000 euros
-
 end
 
 to municipality-initialize
@@ -105,30 +106,32 @@ to municipality-initialize
     ifelse random 2 = 0
     [
       set centralized? False
-      set mu (0.9 + random-float 0.1)
+      set mu 1
     ]
     [
       set centralized? True
-      set mu (0.7 + random-float 0.2)
+      set mu (0.85 + random-float 0.1)
     ]
     set expenditure 0
     set beta1 (0.4 + random-float 0.1)                                  ; knowledge of importance of recycling
-    set beta2 (0.3 + random-float 0.2)                                  ; knowledge of how to recycle
+    set beta2 (0.55 + random-float 0.1)                                  ; knowledge of how to recycle
     set TW 0                                                            ; collected in this month. zero at the begining of each month
     set SP 0                                                            ; collected in this month. zero at the begining of each month
     set RSP 0                                                           ; collected in this month. zero at the begining of each month
     set target-knowledge-investment-tendency (0.25 + random 4 / 4)
     set price-knowledge-investment-tendency ((random 6 + 1) * 3)
+    set target-importance target-knowledge-investment-tendency * 4
     let temp random 3
     ifelse temp = 0
-    [ set invest-in-recycling-importance 1
-      set invest-in-recycling-knowledge 1]
+    [ set invest-in-recycling-importance 0.75
+      set invest-in-recycling-knowledge 0.75]
     [ ifelse temp = 1
-      [  set invest-in-recycling-importance 1.5
+      [  set invest-in-recycling-importance 1
          set invest-in-recycling-knowledge 0.5]
       [  set invest-in-recycling-importance 0.5
-         set invest-in-recycling-knowledge 1.5]]
+         set invest-in-recycling-knowledge 1]]
     set invest-in-status-quo? one-of list true false
+    set target-failure-months 0
   ]
 
 end
@@ -136,7 +139,7 @@ end
 to RC-initialize
   create-ordered-RCs num-RC
   ask RCs[
-    set alpha (0.4 + random 5 * 0.05)                                  ;;the sorting factor of each company is set to a random value
+    set alpha (0.55 + random 5 * 0.05)                                  ;;the sorting factor of each company is set to a random value
     set capacity (TTW / num-RC * 1.15)                                  ;;capacity is set to be an equal proportion of the total waste expected to be generated from all the municipalities
     set remaining-capacity capacity                                     ;;the remaining capacity is equal to the total capacity of the RC at the start of the model run
   ]
@@ -193,7 +196,7 @@ to visualize
   ]
 end
 
-to target-change
+to technology-progress
 
   if (remainder ticks month-before-technology-increase = 0 and ticks != 0)
   [
@@ -203,7 +206,7 @@ to target-change
   ]
 end
 
-to technology-progress
+to target-change
   if (remainder ticks month-before-target-increase = 0 and ticks != 0)
   [
     set recycling-target (min list (recycling-target + recycling-target-increase / 100) 0.9)
@@ -268,13 +271,10 @@ to establish-contract
   let cheapest-base-price min ([base-price] of my-offers)
   let candidate-offer one-of my-offers
   let offer-utility 0
-  let candidate-RC one-of RCs
-  ask candidate-offer [
-    set offer-utility ((min list recycling-target proposed-recycling-rate) / recycling-target * 2 + cheapest-base-price / base-price)
-  ]
+  let candidate-RC 0
   ask my-offers[
-    if offer-utility <= ((min list recycling-target proposed-recycling-rate) / recycling-target * 2 + cheapest-base-price / base-price) [
-      set offer-utility ((min list recycling-target proposed-recycling-rate) / recycling-target * 2 + cheapest-base-price / base-price)
+    if offer-utility <= ((min list recycling-target proposed-recycling-rate) / recycling-target * [target-importance] of myself + cheapest-base-price / base-price) [
+      set offer-utility ((min list recycling-target proposed-recycling-rate) / recycling-target * [target-importance] of myself + cheapest-base-price / base-price)
       set candidate-offer self
     ]
   ]
@@ -326,12 +326,16 @@ to decrease-betas
   [ set expenditure (expenditure + investment-cost / investment-multiplier * betas-decrease-multiplier)]
   [
     set beta1 max list 0.4 (beta1 - betas-decrease-multiplier)
-    set beta2 max list 0.3 (beta2 - betas-decrease-multiplier)
+    set beta2 max list 0.55 (beta2 - betas-decrease-multiplier)
   ]
 end
 
 to check-recycling-rate
-  set average-recycling-rate-met mean [recycling-rate-met] of my-contracts
+  set average-recycling-rate-met 0
+  foreach sort my-contracts[ the-contract ->
+    set average-recycling-rate-met (average-recycling-rate-met + [recycling-rate-met] of the-contract * [waste-fraction] of the-contract)
+  ]
+  if average-recycling-rate-met < recycling-target [set target-failure-months (target-failure-months + 1)]
 end
 
 ;; RC procedures:
@@ -370,16 +374,17 @@ to process-waste
     let y ([sp] of other-end * waste-fraction)                                   ;;local variable to store SP of municipality with which the contract is made
     let waste-collected ([TW] of other-end * waste-fraction)                     ;;local variable to store the waste passed on to RC for recycling
     let RNSP ((min list waste-collected promised-waste) * eta - x)
+    let NSP ((min list waste-collected promised-waste) - y)
     let fine 0                                                                   ;;local variable to store fine to be collected by RC
     let money-to-be-collected 0                                                  ;;local variable to store total money to be collected by RC (fine + money for processing waste collected)
 
     if waste-collected < promised-waste                                          ;;should the municipality pay fine?
     [
-      set fine (m * base-price *  (promised-waste - waste-collected))            ;;calculate fine =  m * max((promised - delivered), 2% of promised) * base price
+      set fine (m * base-price *  max list (promised-waste - waste-collected) (0.02 * promised-waste))            ;;calculate fine
     ]
     set money-to-be-collected ((waste-collected * base-price) + fine)
 
-    set recycling-rate-met ((tech * x) + (tech * tech * RNSP)) / (waste-collected * eta) ;;update contract with this month's recycling rate
+    set recycling-rate-met (x * tech + rnsp * tech * tech) / (waste-collected * eta) ;;update contract with this month's recycling rate
 
     ask other-end[                                                               ;;ask municipalities to update their expenditure based on the money to be collected by the RC
       set expenditure (expenditure + money-to-be-collected)                      ;;collect base price * waste processed in the month + fine
@@ -392,10 +397,11 @@ to-report municipality-stats [x]
   let rate precision ([average-recycling-rate-met] of municipality x) 2
   let importance precision ([beta1] of municipality x) 2
   let knowledge precision ([beta2] of municipality x) 2
+  let failure-count precision ([target-failure-months] of municipality x) 2
   let met? True
   if [average-recycling-rate-met] of municipality x < recycling-target
   [ set met? False ]
-  report (word money "," rate "," importance "," knowledge "," met?)
+  report (word money "," rate "," importance "," knowledge "," met? "," failure-count)
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
@@ -492,7 +498,7 @@ true
 false
 "" ""
 PENS
-"default" 1.0 0 -16777216 true "" "if count contracts > 0[\nlet x 0\nask contracts[\n set x x + recycling-rate-met\n]\nplot x / count contracts]"
+"default" 1.0 0 -16777216 true "" "if count contracts > 0[\nlet x 0\nask municipalities[\n set x x + average-recycling-rate-met\n]\nplot x / count municipalities]"
 
 SLIDER
 7
@@ -503,7 +509,7 @@ recycling-target-increase
 recycling-target-increase
 0
 5
-5.0
+3.0
 1
 1
 percent
@@ -518,7 +524,7 @@ month-before-target-increase
 month-before-target-increase
 12
 60
-48.0
+36.0
 1
 1
 NIL
@@ -532,8 +538,8 @@ SLIDER
 technology-increase
 technology-increase
 0
-5
-5.0
+3
+3.0
 1
 1
 percent
@@ -548,8 +554,8 @@ month-before-technology-increase
 month-before-technology-increase
 12
 60
-48.0
-1
+36.0
+6
 1
 NIL
 HORIZONTAL
@@ -1021,12 +1027,12 @@ false
 Polygon -7500403 true true 270 75 225 30 30 225 75 270
 Polygon -7500403 true true 30 75 75 30 270 225 225 270
 @#$#@#$#@
-NetLogo 6.0.4
+NetLogo 6.0.3
 @#$#@#$#@
 @#$#@#$#@
 @#$#@#$#@
 <experiments>
-  <experiment name="Main experiment" repetitions="5" runMetricsEveryStep="true">
+  <experiment name="Main experiment" repetitions="20" runMetricsEveryStep="true">
     <setup>setup</setup>
     <go>go</go>
     <timeLimit steps="240"/>
@@ -1038,27 +1044,21 @@ NetLogo 6.0.4
     <metric>municipality-stats 5</metric>
     <metric>municipality-stats 6</metric>
     <metric>municipality-stats 7</metric>
-    <metric>municipality-stats 8</metric>
-    <metric>municipality-stats 9</metric>
     <enumeratedValueSet variable="month-before-technology-increase">
       <value value="12"/>
-      <value value="24"/>
       <value value="36"/>
-      <value value="48"/>
     </enumeratedValueSet>
     <enumeratedValueSet variable="technology-increase">
       <value value="1"/>
-      <value value="5"/>
+      <value value="3"/>
     </enumeratedValueSet>
     <enumeratedValueSet variable="recycling-target-increase">
       <value value="1"/>
-      <value value="5"/>
+      <value value="3"/>
     </enumeratedValueSet>
     <enumeratedValueSet variable="month-before-target-increase">
       <value value="12"/>
-      <value value="24"/>
       <value value="36"/>
-      <value value="48"/>
     </enumeratedValueSet>
   </experiment>
   <experiment name="Test experiment" repetitions="10" runMetricsEveryStep="true">
