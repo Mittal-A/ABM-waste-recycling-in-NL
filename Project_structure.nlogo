@@ -34,8 +34,8 @@ municipalities-own [
   SP ; collected in this month. zero at the begining of each month
   RSP ; collected in this month. zero at the begining of each month
   remaining-waste-fraction
-  price-knowledge-investment-tendency ; to see different behaviors of knowledge investment for behavior analysis
-  target-knowledge-investment-tendency
+  price-investment-tendency ; to see different behaviors of knowledge investment for behavior analysis
+  target-investment-tendency
   invest-in-recycling-importance
   invest-in-recycling-knowledge
   last-contract-base-price-mean
@@ -118,9 +118,9 @@ to municipality-initialize
     set TW 0                                                            ; collected in this month. zero at the begining of each month
     set SP 0                                                            ; collected in this month. zero at the begining of each month
     set RSP 0                                                           ; collected in this month. zero at the begining of each month
-    set target-knowledge-investment-tendency (0.25 + random 4 / 4)
-    set price-knowledge-investment-tendency ((random 6 + 1) * 3)
-    set target-importance target-knowledge-investment-tendency * 4
+    set target-investment-tendency (0.25 + random 4 / 4)
+    set price-investment-tendency ((random 6 + 1) * 3)
+    set target-importance target-investment-tendency * 4
     let temp random 3
     ifelse temp = 0
     [ set invest-in-recycling-importance 0.75
@@ -301,7 +301,7 @@ end
 to check-target-investment-necessity
   foreach [recycling-rate-met] of my-contracts [ the-rate ->
     if the-rate < recycling-target[
-      invest-in-knowledge target-knowledge-investment-tendency
+      invest-in-knowledge target-investment-tendency
       stop
     ]
   ]
@@ -309,7 +309,7 @@ end
 
 to check-price-investment-necessity
   if mean [base-price] of my-contracts >= last-contract-base-price-mean[
-    invest-in-knowledge (price-knowledge-investment-tendency * mean [base-price] of my-contracts / last-contract-base-price-mean)
+    invest-in-knowledge (price-investment-tendency * mean [base-price] of my-contracts / last-contract-base-price-mean)
   ]
 end
 
@@ -394,14 +394,18 @@ end
 
 to-report municipality-stats [x]
   let money round [expenditure] of municipality x
-  let rate precision ([average-recycling-rate-met] of municipality x) 2
-  let importance precision ([beta1] of municipality x) 2
-  let knowledge precision ([beta2] of municipality x) 2
+  let final-gap precision ([average-recycling-rate-met] of municipality x - recycling-target) 2
+  let importance-tendency precision ([invest-in-recycling-importance] of municipality x) 2
+  let knowledge-tendency precision ([invest-in-recycling-knowledge] of municipality x) 2
   let failure-count precision ([target-failure-months] of municipality x) 2
+  let target-tendency precision ([target-investment-tendency] of municipality x) 2
+  let price-tendency precision ([price-investment-tendency] of municipality x) 2
+  let c? [centralized?] of municipality x
+  let isq? [invest-in-status-quo?] of municipality x
   let met? True
   if [average-recycling-rate-met] of municipality x < recycling-target
   [ set met? False ]
-  report (word money "," rate "," importance "," knowledge "," met? "," failure-count)
+  report (word money "," final-gap "," importance-tendency "," knowledge-tendency "," target-tendency "," price-tendency "," isq? "," c? "," failure-count)
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
@@ -509,7 +513,7 @@ recycling-target-increase
 recycling-target-increase
 0
 5
-3.0
+5.0
 1
 1
 percent
@@ -523,9 +527,9 @@ SLIDER
 month-before-target-increase
 month-before-target-increase
 12
-60
+36
 36.0
-1
+6
 1
 NIL
 HORIZONTAL
@@ -1087,6 +1091,33 @@ NetLogo 6.0.3
     <enumeratedValueSet variable="month-before-target-increase">
       <value value="12"/>
     </enumeratedValueSet>
+  </experiment>
+  <experiment name="Main experiment - just final result" repetitions="20" runMetricsEveryStep="false">
+    <setup>setup</setup>
+    <go>go</go>
+    <timeLimit steps="240"/>
+    <metric>municipality-stats 0</metric>
+    <metric>municipality-stats 1</metric>
+    <metric>municipality-stats 2</metric>
+    <metric>municipality-stats 3</metric>
+    <metric>municipality-stats 4</metric>
+    <metric>municipality-stats 5</metric>
+    <metric>municipality-stats 6</metric>
+    <metric>municipality-stats 7</metric>
+    <steppedValueSet variable="month-before-technology-increase" first="12" step="12" last="36"/>
+    <enumeratedValueSet variable="technology-increase">
+      <value value="1"/>
+      <value value="2"/>
+      <value value="3"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="recycling-target-increase">
+      <value value="1"/>
+      <value value="2"/>
+      <value value="3"/>
+      <value value="4"/>
+      <value value="5"/>
+    </enumeratedValueSet>
+    <steppedValueSet variable="month-before-target-increase" first="12" step="12" last="36"/>
   </experiment>
 </experiments>
 @#$#@#$#@
