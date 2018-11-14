@@ -1,6 +1,7 @@
 library(reshape2)
 library(ggplot2)
 library(plotly)
+library(sdtoolkit)
 #
 # functions ---------------------------------------------------------------
 
@@ -63,7 +64,7 @@ result_df$behavior_sq_investment = find_sq_investment(result_df$value)
 result_df$behavior_centralized = find_centralized(result_df$value)
 result_df$kpi_failure_count = find_failure_count(result_df$value)
 result_df = subset(result_df, select = -value)
-write.csv(result_df, "edited_results_final_only.csv", row.names = F)
+# write.csv(result_df, "edited_results_final_only_20000.csv", row.names = F)
 
 result_df$behavior_price_tendency = factor(result_df$behavior_price_tendency, levels(result_df$behavior_price_tendency)[c(4,5,6,1,2,3)])
 
@@ -81,12 +82,67 @@ ggplot(result_df, aes(x=(behavior_importance_tendency), y=kpi_expenditure, fill 
 
 
 ggplot(result_df, aes(x=(behavior_target_tendency), y=kpi_expenditure, fill = (technology.increase))) + geom_violin()
-
+ggplot(result_df, aes(x=(behavior_target_tendency), y=kpi_expenditure, fill = (technology.increase))) + geom_boxplot()
 
 
 ggplot(result_df, aes(x=(behavior_price_tendency), y=kpi_expenditure, fill = (technology.increase))) + geom_violin()
+ggplot(result_df, aes(x=(behavior_price_tendency), y=kpi_expenditure, fill = (technology.increase))) + geom_boxplot()
+
+# SCENARIO DISCOVERY ------------------------------------------------------
+
+xmatrix <- result_df[1:5000,(ncol(result_df)-5):(ncol(result_df))]
+outputvar <- result_df[1:5000,(ncol(result_df)-8)]
+
+for (i in 1:6) {
+  xmatrix[,i] = as.numeric(xmatrix[,i])
+}
+outputvar = outputvar / max(outputvar)
+
+# outputvar[,2] = (-min(outputvar[,2]) + outputvar[,2]) / (max(outputvar[,2])-min(outputvar[,2]))
+# outputvar[,1] = outputvar[,1] / max(outputvar[,1])
+# outputvar[,3] = outputvar[,3] / max(outputvar[,3])
+
+myboxes <- sdprim(x=xmatrix, y=outputvar)
+
+
+
+
+
+data(exboxes)
+dimplot(exboxes)
+scatterbox(exboxes)
 
 # etc ---------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+ggplot(temp, aes(x=(behavior_importance_tendency), y=kpi_expenditure, fill = (technology.increase))) + geom_violin()
+ggplot(temp, aes(x=(behavior_importance_tendency), y=kpi_expenditure, fill = (technology.increase))) + geom_boxplot()
+
+
+ggplot(temp, aes(x=(behavior_target_tendency), y=kpi_expenditure, fill = (technology.increase))) + geom_violin()
+ggplot(temp, aes(x=(behavior_target_tendency), y=kpi_expenditure, fill = (technology.increase))) + geom_boxplot()
+
+
+ggplot(temp, aes(x=(behavior_price_tendency), y=kpi_expenditure, fill = (technology.increase))) + geom_violin()
+ggplot(temp, aes(x=as.factor(behavior_price_tendency), y=kpi_expenditure, fill = (technology.increase))) + geom_boxplot()
+
+
+subplot(p1, p2) %>% layout(margin = list(l = 50))
+
+
+
+
 
 result_df[result_df$run.number==7,]
 
@@ -98,11 +154,15 @@ length(result_df$value)
 
 temp = result_df[1:100,]
 
+temp = read.csv("edited_results_final_only_1000.csv")
 
-
-
+temp = result_df
 
 plot_ly(data = result_df, y = ~kpi_expenditure, x = ~behavior_importance_tendency, type = "scatter", mode = "markers")
 
 
 plot_ly(data = result_df, y = ~kpi_expenditure, x = ~behavior_importance_tendency, type = "violin")
+
+
+temp[,1] = as.factor(temp[,1])
+
