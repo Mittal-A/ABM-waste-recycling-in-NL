@@ -14,6 +14,9 @@ globals [
   month-before-technology-increase
   recycling-target-increase
   month-before-target-increase
+  base-value-beta1
+  base-value-beta2
+  base-value-target-investment-tendency
 ]
 
 breed [municipalities municipality]
@@ -96,10 +99,13 @@ to global-initialize
   set TTW  0
   set investment-multiplier 0.002        ;; increase in beta1 and beta 2 with investment in knowledge
   set betas-decrease-multiplier 0.0005
-  set investment-cost 20               ;;assumption that each investment in policy costs around 20000 euros
+  set investment-cost 20                 ;;assumption that each investment in policy costs around 20000 euros
   set month-before-technology-increase 12
   set recycling-target-increase 15
   set month-before-target-increase 120
+  set base-value-beta1 0.4
+  set base-value-beta2 0.55
+  set base-value-target-investment-tendency 0.25
 end
 
 to municipality-initialize
@@ -119,12 +125,12 @@ to municipality-initialize
       set mu (0.85 + random-float 0.1)
     ]
     set expenditure 0
-    set beta1 (0.4 + random-float 0.1)                                  ; knowledge of importance of recycling
-    set beta2 (0.55 + random-float 0.1)                                  ; knowledge of how to recycle
+    set beta1 (base-value-beta1 + random-float 0.1)                                  ; knowledge of importance of recycling
+    set beta2 (base-value-beta2 + random-float 0.1)                                 ; knowledge of how to recycle
     set TW 0                                                            ; collected in this month. zero at the begining of each month
     set SP 0                                                            ; collected in this month. zero at the begining of each month
     set RSP 0                                                           ; collected in this month. zero at the begining of each month
-    set target-investment-tendency (0.25 + random 4 / 4)
+    set target-investment-tendency (base-value-target-investment-tendency + random 4 / 4)
     set price-investment-tendency ((random 6 + 1) * 3)
     set target-importance target-investment-tendency * 4
     let temp random 3
@@ -519,7 +525,7 @@ technology-increase
 technology-increase
 0
 2
-2.0
+3.0
 0.5
 1
 percent
@@ -992,7 +998,7 @@ false
 Polygon -7500403 true true 270 75 225 30 30 225 75 270
 Polygon -7500403 true true 30 75 75 30 270 225 225 270
 @#$#@#$#@
-NetLogo 6.0.3
+NetLogo 6.0.4
 @#$#@#$#@
 @#$#@#$#@
 @#$#@#$#@
@@ -1071,6 +1077,394 @@ NetLogo 6.0.3
       <value value="0.5"/>
       <value value="1"/>
       <value value="2"/>
+    </enumeratedValueSet>
+  </experiment>
+  <experiment name="Sensitivity Analysis plus 10%" repetitions="10" runMetricsEveryStep="false">
+    <setup>setup</setup>
+    <go>go</go>
+    <timeLimit steps="240"/>
+    <metric>municipality-stats 0</metric>
+    <metric>municipality-stats 1</metric>
+    <metric>municipality-stats 2</metric>
+    <metric>municipality-stats 3</metric>
+    <metric>municipality-stats 4</metric>
+    <metric>municipality-stats 5</metric>
+    <metric>municipality-stats 6</metric>
+    <metric>municipality-stats 7</metric>
+    <enumeratedValueSet variable="recycling-target">
+      <value value="0.65"/>
+      <value value="0.715"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="eta">
+      <value value="0.35"/>
+      <value value="0.385"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="theta-old">
+      <value value="0.3"/>
+      <value value="0.33"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="theta-single">
+      <value value="0.5"/>
+      <value value="0.55"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="theta-family">
+      <value value="1"/>
+      <value value="1.1"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="theta-couple">
+      <value value="0.8"/>
+      <value value="0.88"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="investment-multiplier">
+      <value value="0.002"/>
+      <value value="0.0022"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="betas-decrease-multiplier">
+      <value value="5.0E-4"/>
+      <value value="5.5E-4"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="investment-cost">
+      <value value="20"/>
+      <value value="22"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="recycling-target-increase">
+      <value value="15"/>
+      <value value="16.5"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="month-before-target-increase">
+      <value value="120"/>
+      <value value="132"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="base-value-beta1">
+      <value value="0.4"/>
+      <value value="0.44"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="base-value-beta2">
+      <value value="0.55"/>
+      <value value="0.605"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="base-value-target-investment-tendency">
+      <value value="0.25"/>
+      <value value="0.275"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="num-municipalities">
+      <value value="10"/>
+      <value value="11"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="num-RC">
+      <value value="5"/>
+      <value value="6"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="month-before-technology-increase">
+      <value value="12"/>
+      <value value="13"/>
+    </enumeratedValueSet>
+  </experiment>
+  <experiment name="Sensitivity Analysis minus 10%" repetitions="10" runMetricsEveryStep="false">
+    <setup>setup</setup>
+    <go>go</go>
+    <timeLimit steps="240"/>
+    <metric>municipality-stats 0</metric>
+    <metric>municipality-stats 1</metric>
+    <metric>municipality-stats 2</metric>
+    <metric>municipality-stats 3</metric>
+    <metric>municipality-stats 4</metric>
+    <metric>municipality-stats 5</metric>
+    <metric>municipality-stats 6</metric>
+    <metric>municipality-stats 7</metric>
+    <enumeratedValueSet variable="recycling-target">
+      <value value="0.65"/>
+      <value value="0.585"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="eta">
+      <value value="0.35"/>
+      <value value="0.315"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="theta-old">
+      <value value="0.3"/>
+      <value value="0.27"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="theta-single">
+      <value value="0.5"/>
+      <value value="0.45"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="theta-family">
+      <value value="1"/>
+      <value value="0.9"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="theta-couple">
+      <value value="0.8"/>
+      <value value="0.72"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="investment-multiplier">
+      <value value="0.002"/>
+      <value value="0.0018"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="betas-decrease-multiplier">
+      <value value="5.0E-4"/>
+      <value value="4.5E-4"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="investment-cost">
+      <value value="20"/>
+      <value value="18"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="recycling-target-increase">
+      <value value="15"/>
+      <value value="13.5"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="month-before-target-increase">
+      <value value="120"/>
+      <value value="108"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="base-value-beta1">
+      <value value="0.4"/>
+      <value value="0.36"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="base-value-beta2">
+      <value value="0.55"/>
+      <value value="0.495"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="base-value-target-investment-tendency">
+      <value value="0.25"/>
+      <value value="0.225"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="num-municipalities">
+      <value value="10"/>
+      <value value="9"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="num-RC">
+      <value value="5"/>
+      <value value="4"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="month-before-technology-increase">
+      <value value="12"/>
+      <value value="11"/>
+    </enumeratedValueSet>
+  </experiment>
+  <experiment name="Sensitivity Analysis plus 25%" repetitions="10" runMetricsEveryStep="false">
+    <setup>setup</setup>
+    <go>go</go>
+    <timeLimit steps="240"/>
+    <metric>municipality-stats 0</metric>
+    <metric>municipality-stats 1</metric>
+    <metric>municipality-stats 2</metric>
+    <metric>municipality-stats 3</metric>
+    <metric>municipality-stats 4</metric>
+    <metric>municipality-stats 5</metric>
+    <metric>municipality-stats 6</metric>
+    <metric>municipality-stats 7</metric>
+    <enumeratedValueSet variable="recycling-target">
+      <value value="0.65"/>
+      <value value="0.8125"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="eta">
+      <value value="0.35"/>
+      <value value="0.4375"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="theta-old">
+      <value value="0.3"/>
+      <value value="0.375"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="theta-single">
+      <value value="0.5"/>
+      <value value="0.625"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="theta-family">
+      <value value="1"/>
+      <value value="1.25"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="theta-couple">
+      <value value="0.8"/>
+      <value value="1"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="investment-multiplier">
+      <value value="0.002"/>
+      <value value="0.0025"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="betas-decrease-multiplier">
+      <value value="5.0E-4"/>
+      <value value="6.25E-4"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="investment-cost">
+      <value value="20"/>
+      <value value="25"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="recycling-target-increase">
+      <value value="15"/>
+      <value value="18.75"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="month-before-target-increase">
+      <value value="120"/>
+      <value value="150"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="base-value-beta1">
+      <value value="0.4"/>
+      <value value="0.5"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="base-value-beta2">
+      <value value="0.55"/>
+      <value value="0.6875"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="base-value-target-investment-tendency">
+      <value value="0.25"/>
+      <value value="0.3125"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="num-municipalities">
+      <value value="10"/>
+      <value value="13"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="num-RC">
+      <value value="5"/>
+      <value value="7"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="month-before-technology-increase">
+      <value value="12"/>
+      <value value="15"/>
+    </enumeratedValueSet>
+  </experiment>
+  <experiment name="Sensitivity Analysis minus 25%" repetitions="10" runMetricsEveryStep="false">
+    <setup>setup</setup>
+    <go>go</go>
+    <timeLimit steps="240"/>
+    <metric>municipality-stats 0</metric>
+    <metric>municipality-stats 1</metric>
+    <metric>municipality-stats 2</metric>
+    <metric>municipality-stats 3</metric>
+    <metric>municipality-stats 4</metric>
+    <metric>municipality-stats 5</metric>
+    <metric>municipality-stats 6</metric>
+    <metric>municipality-stats 7</metric>
+    <enumeratedValueSet variable="recycling-target">
+      <value value="0.65"/>
+      <value value="0.4875"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="eta">
+      <value value="0.35"/>
+      <value value="0.2625"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="theta-old">
+      <value value="0.3"/>
+      <value value="0.225"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="theta-single">
+      <value value="0.5"/>
+      <value value="0.375"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="theta-family">
+      <value value="1"/>
+      <value value="0.75"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="theta-couple">
+      <value value="0.8"/>
+      <value value="0.6"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="investment-multiplier">
+      <value value="0.002"/>
+      <value value="0.0015"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="betas-decrease-multiplier">
+      <value value="5.0E-4"/>
+      <value value="3.75E-4"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="investment-cost">
+      <value value="20"/>
+      <value value="15"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="recycling-target-increase">
+      <value value="15"/>
+      <value value="11.25"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="month-before-target-increase">
+      <value value="120"/>
+      <value value="90"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="base-value-beta1">
+      <value value="0.4"/>
+      <value value="0.3"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="base-value-beta2">
+      <value value="0.55"/>
+      <value value="0.4125"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="base-value-target-investment-tendency">
+      <value value="0.25"/>
+      <value value="0.1875"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="num-municipalities">
+      <value value="10"/>
+      <value value="8"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="num-RC">
+      <value value="5"/>
+      <value value="3"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="month-before-technology-increase">
+      <value value="12"/>
+      <value value="9"/>
+    </enumeratedValueSet>
+  </experiment>
+  <experiment name="Sensitivity Analysis base run" repetitions="10" runMetricsEveryStep="false">
+    <setup>setup</setup>
+    <go>go</go>
+    <timeLimit steps="240"/>
+    <metric>municipality-stats 0</metric>
+    <metric>municipality-stats 1</metric>
+    <metric>municipality-stats 2</metric>
+    <metric>municipality-stats 3</metric>
+    <metric>municipality-stats 4</metric>
+    <metric>municipality-stats 5</metric>
+    <metric>municipality-stats 6</metric>
+    <metric>municipality-stats 7</metric>
+    <enumeratedValueSet variable="recycling-target">
+      <value value="0.65"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="eta">
+      <value value="0.35"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="theta-old">
+      <value value="0.3"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="theta-single">
+      <value value="0.5"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="theta-family">
+      <value value="1"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="theta-couple">
+      <value value="0.8"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="investment-multiplier">
+      <value value="0.002"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="betas-decrease-multiplier">
+      <value value="5.0E-4"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="investment-cost">
+      <value value="20"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="recycling-target-increase">
+      <value value="15"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="month-before-target-increase">
+      <value value="120"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="base-value-beta1">
+      <value value="0.4"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="base-value-beta2">
+      <value value="0.55"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="base-value-target-investment-tendency">
+      <value value="0.25"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="num-municipalities">
+      <value value="10"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="num-RC">
+      <value value="5"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="month-before-technology-increase">
+      <value value="12"/>
     </enumeratedValueSet>
   </experiment>
 </experiments>
