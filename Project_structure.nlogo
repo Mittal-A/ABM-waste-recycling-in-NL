@@ -1131,22 +1131,6 @@ NetLogo 6.0.4
       <value value="15"/>
       <value value="16.5"/>
     </enumeratedValueSet>
-    <enumeratedValueSet variable="month-before-target-increase">
-      <value value="120"/>
-      <value value="132"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="base-value-beta1">
-      <value value="0.4"/>
-      <value value="0.44"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="base-value-beta2">
-      <value value="0.55"/>
-      <value value="0.605"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="base-value-target-investment-tendency">
-      <value value="0.25"/>
-      <value value="0.275"/>
-    </enumeratedValueSet>
     <enumeratedValueSet variable="num-municipalities">
       <value value="10"/>
       <value value="11"/>
@@ -1154,10 +1138,6 @@ NetLogo 6.0.4
     <enumeratedValueSet variable="num-RC">
       <value value="5"/>
       <value value="6"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="month-before-technology-increase">
-      <value value="12"/>
-      <value value="13"/>
     </enumeratedValueSet>
   </experiment>
   <experiment name="Sensitivity Analysis minus 10%" repetitions="10" runMetricsEveryStep="false">
@@ -1212,22 +1192,6 @@ NetLogo 6.0.4
       <value value="15"/>
       <value value="13.5"/>
     </enumeratedValueSet>
-    <enumeratedValueSet variable="month-before-target-increase">
-      <value value="120"/>
-      <value value="108"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="base-value-beta1">
-      <value value="0.4"/>
-      <value value="0.36"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="base-value-beta2">
-      <value value="0.55"/>
-      <value value="0.495"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="base-value-target-investment-tendency">
-      <value value="0.25"/>
-      <value value="0.225"/>
-    </enumeratedValueSet>
     <enumeratedValueSet variable="num-municipalities">
       <value value="10"/>
       <value value="9"/>
@@ -1235,10 +1199,6 @@ NetLogo 6.0.4
     <enumeratedValueSet variable="num-RC">
       <value value="5"/>
       <value value="4"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="month-before-technology-increase">
-      <value value="12"/>
-      <value value="11"/>
     </enumeratedValueSet>
   </experiment>
   <experiment name="Sensitivity Analysis plus 25%" repetitions="10" runMetricsEveryStep="false">
@@ -1293,22 +1253,6 @@ NetLogo 6.0.4
       <value value="15"/>
       <value value="18.75"/>
     </enumeratedValueSet>
-    <enumeratedValueSet variable="month-before-target-increase">
-      <value value="120"/>
-      <value value="150"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="base-value-beta1">
-      <value value="0.4"/>
-      <value value="0.5"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="base-value-beta2">
-      <value value="0.55"/>
-      <value value="0.6875"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="base-value-target-investment-tendency">
-      <value value="0.25"/>
-      <value value="0.3125"/>
-    </enumeratedValueSet>
     <enumeratedValueSet variable="num-municipalities">
       <value value="10"/>
       <value value="13"/>
@@ -1316,10 +1260,6 @@ NetLogo 6.0.4
     <enumeratedValueSet variable="num-RC">
       <value value="5"/>
       <value value="7"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="month-before-technology-increase">
-      <value value="12"/>
-      <value value="15"/>
     </enumeratedValueSet>
   </experiment>
   <experiment name="Sensitivity Analysis minus 25%" repetitions="10" runMetricsEveryStep="false">
@@ -1374,22 +1314,6 @@ NetLogo 6.0.4
       <value value="15"/>
       <value value="11.25"/>
     </enumeratedValueSet>
-    <enumeratedValueSet variable="month-before-target-increase">
-      <value value="120"/>
-      <value value="90"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="base-value-beta1">
-      <value value="0.4"/>
-      <value value="0.3"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="base-value-beta2">
-      <value value="0.55"/>
-      <value value="0.4125"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="base-value-target-investment-tendency">
-      <value value="0.25"/>
-      <value value="0.1875"/>
-    </enumeratedValueSet>
     <enumeratedValueSet variable="num-municipalities">
       <value value="10"/>
       <value value="8"/>
@@ -1397,10 +1321,6 @@ NetLogo 6.0.4
     <enumeratedValueSet variable="num-RC">
       <value value="5"/>
       <value value="3"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="month-before-technology-increase">
-      <value value="12"/>
-      <value value="9"/>
     </enumeratedValueSet>
   </experiment>
   <experiment name="Sensitivity Analysis base run" repetitions="10" runMetricsEveryStep="false">
@@ -1445,26 +1365,11 @@ NetLogo 6.0.4
     <enumeratedValueSet variable="recycling-target-increase">
       <value value="15"/>
     </enumeratedValueSet>
-    <enumeratedValueSet variable="month-before-target-increase">
-      <value value="120"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="base-value-beta1">
-      <value value="0.4"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="base-value-beta2">
-      <value value="0.55"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="base-value-target-investment-tendency">
-      <value value="0.25"/>
-    </enumeratedValueSet>
     <enumeratedValueSet variable="num-municipalities">
       <value value="10"/>
     </enumeratedValueSet>
     <enumeratedValueSet variable="num-RC">
       <value value="5"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="month-before-technology-increase">
-      <value value="12"/>
     </enumeratedValueSet>
   </experiment>
 </experiments>
