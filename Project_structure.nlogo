@@ -11,6 +11,9 @@ globals [
   investment-multiplier ; adjusts how much each knowledge factor needs to be increased by investment in knowledge
   betas-decrease-multiplier
   investment-cost ; what is the cost of each investment
+  month-before-technology-increase
+  recycling-target-increase
+  month-before-target-increase
 ]
 
 breed [municipalities municipality]
@@ -82,9 +85,9 @@ to setup
 end
 
 to global-initialize
-  set recycling-target 0.5
-  set num-municipalities 8
-  set num-RC 4
+  set recycling-target 0.65
+  set num-municipalities 10
+  set num-RC 5
   set eta 0.35
   set theta-old 0.3
   set theta-single 0.5
@@ -94,6 +97,9 @@ to global-initialize
   set investment-multiplier 0.002        ;; increase in beta1 and beta 2 with investment in knowledge
   set betas-decrease-multiplier 0.0005
   set investment-cost 20               ;;assumption that each investment in policy costs around 20000 euros
+  set month-before-technology-increase 12
+  set recycling-target-increase 15
+  set month-before-target-increase 120
 end
 
 to municipality-initialize
@@ -176,7 +182,7 @@ to go
   ]
 
   tick
-  if ticks >= 240 [stop]
+  if ticks > 240 [stop]
 end
 
 ;; general procedures:
@@ -505,36 +511,6 @@ PENS
 "default" 1.0 0 -16777216 true "" "if count contracts > 0[\nlet x 0\nask municipalities[\n set x x + average-recycling-rate-met\n]\nplot x / count municipalities]"
 
 SLIDER
-7
-455
-246
-488
-recycling-target-increase
-recycling-target-increase
-0
-5
-5.0
-1
-1
-percent
-HORIZONTAL
-
-SLIDER
-6
-494
-245
-527
-month-before-target-increase
-month-before-target-increase
-12
-36
-36.0
-6
-1
-NIL
-HORIZONTAL
-
-SLIDER
 6
 530
 245
@@ -542,26 +518,11 @@ SLIDER
 technology-increase
 technology-increase
 0
-3
-3.0
-1
+2
+2.0
+0.5
 1
 percent
-HORIZONTAL
-
-SLIDER
-6
-567
-248
-600
-month-before-technology-increase
-month-before-technology-increase
-12
-60
-36.0
-6
-1
-NIL
 HORIZONTAL
 
 PLOT
@@ -1092,7 +1053,7 @@ NetLogo 6.0.3
       <value value="12"/>
     </enumeratedValueSet>
   </experiment>
-  <experiment name="Main experiment - just final result" repetitions="20" runMetricsEveryStep="false">
+  <experiment name="Main experiment - just final result" repetitions="1000" runMetricsEveryStep="false">
     <setup>setup</setup>
     <go>go</go>
     <timeLimit steps="240"/>
@@ -1104,20 +1065,13 @@ NetLogo 6.0.3
     <metric>municipality-stats 5</metric>
     <metric>municipality-stats 6</metric>
     <metric>municipality-stats 7</metric>
-    <steppedValueSet variable="month-before-technology-increase" first="12" step="12" last="36"/>
+    <metric>municipality-stats 8</metric>
+    <metric>municipality-stats 9</metric>
     <enumeratedValueSet variable="technology-increase">
+      <value value="0.5"/>
       <value value="1"/>
       <value value="2"/>
-      <value value="3"/>
     </enumeratedValueSet>
-    <enumeratedValueSet variable="recycling-target-increase">
-      <value value="1"/>
-      <value value="2"/>
-      <value value="3"/>
-      <value value="4"/>
-      <value value="5"/>
-    </enumeratedValueSet>
-    <steppedValueSet variable="month-before-target-increase" first="12" step="12" last="36"/>
   </experiment>
 </experiments>
 @#$#@#$#@
