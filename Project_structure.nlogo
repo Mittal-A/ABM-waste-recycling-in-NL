@@ -399,7 +399,7 @@ to process-waste
     set recycling-rate-met (x * tech + rnsp * tech * tech) / (waste-collected * eta) ;;update contract with this month's recycling rate
 
     ask other-end[                                                               ;;ask municipalities to update their expenditure based on the money to be collected by the RC
-      set expenditure (expenditure + money-to-be-collected)                      ;;collect base price * waste processed in the month + fine
+      set expenditure (expenditure + money-to-be-collected / num-household)                      ;;collect base price * waste processed in the month + fine
     ]
   ]
 end
@@ -525,7 +525,7 @@ technology-increase
 technology-increase
 0
 2
-3.0
+2.0
 0.5
 1
 percent
@@ -616,7 +616,7 @@ NIL
 8.0
 true
 false
-"foreach [who] of municipalities[ the-who -> \ncreate-temporary-plot-pen (word the-who)\nset-current-plot-pen (word the-who)\nset-plot-pen-color 10 * the-who + 5]" "foreach sort municipalities[ the-municipality ->\n   set-current-plot-pen (word ([who] of the-municipality))\n   if ticks != 0[plot [expenditure] of the-municipality / ticks / [num-household] of the-municipality * 1000]\n ]"
+"foreach [who] of municipalities[ the-who -> \ncreate-temporary-plot-pen (word the-who)\nset-current-plot-pen (word the-who)\nset-plot-pen-color 10 * the-who + 5]" "foreach sort municipalities[ the-municipality ->\n   set-current-plot-pen (word ([who] of the-municipality))\n   if ticks != 0[plot [expenditure] of the-municipality / ticks * 1000]\n ]"
 PENS
 
 PLOT
@@ -998,7 +998,7 @@ false
 Polygon -7500403 true true 270 75 225 30 30 225 75 270
 Polygon -7500403 true true 30 75 75 30 270 225 225 270
 @#$#@#$#@
-NetLogo 6.0.4
+NetLogo 6.0.3
 @#$#@#$#@
 @#$#@#$#@
 @#$#@#$#@
@@ -1059,7 +1059,7 @@ NetLogo 6.0.4
       <value value="12"/>
     </enumeratedValueSet>
   </experiment>
-  <experiment name="Main experiment - just final result" repetitions="1000" runMetricsEveryStep="false">
+  <experiment name="Main experiment - just final result" repetitions="10000" runMetricsEveryStep="false">
     <setup>setup</setup>
     <go>go</go>
     <timeLimit steps="240"/>
