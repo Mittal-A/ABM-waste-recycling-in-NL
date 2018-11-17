@@ -1059,7 +1059,7 @@ NetLogo 6.0.3
       <value value="12"/>
     </enumeratedValueSet>
   </experiment>
-  <experiment name="Main experiment - just final result" repetitions="10000" runMetricsEveryStep="false">
+  <experiment name="Main experiment - just final result" repetitions="20000" runMetricsEveryStep="false">
     <setup>setup</setup>
     <go>go</go>
     <timeLimit steps="240"/>
@@ -1091,6 +1091,8 @@ NetLogo 6.0.3
     <metric>municipality-stats 5</metric>
     <metric>municipality-stats 6</metric>
     <metric>municipality-stats 7</metric>
+    <metric>municipality-stats 8</metric>
+    <metric>municipality-stats 9</metric>
     <enumeratedValueSet variable="recycling-target">
       <value value="0.65"/>
       <value value="0.715"/>
@@ -1152,6 +1154,8 @@ NetLogo 6.0.3
     <metric>municipality-stats 5</metric>
     <metric>municipality-stats 6</metric>
     <metric>municipality-stats 7</metric>
+    <metric>municipality-stats 8</metric>
+    <metric>municipality-stats 9</metric>
     <enumeratedValueSet variable="recycling-target">
       <value value="0.65"/>
       <value value="0.585"/>
@@ -1213,6 +1217,8 @@ NetLogo 6.0.3
     <metric>municipality-stats 5</metric>
     <metric>municipality-stats 6</metric>
     <metric>municipality-stats 7</metric>
+    <metric>municipality-stats 8</metric>
+    <metric>municipality-stats 9</metric>
     <enumeratedValueSet variable="recycling-target">
       <value value="0.65"/>
       <value value="0.8125"/>
@@ -1274,6 +1280,8 @@ NetLogo 6.0.3
     <metric>municipality-stats 5</metric>
     <metric>municipality-stats 6</metric>
     <metric>municipality-stats 7</metric>
+    <metric>municipality-stats 8</metric>
+    <metric>municipality-stats 9</metric>
     <enumeratedValueSet variable="recycling-target">
       <value value="0.65"/>
       <value value="0.4875"/>
@@ -1370,6 +1378,26 @@ NetLogo 6.0.3
     </enumeratedValueSet>
     <enumeratedValueSet variable="num-RC">
       <value value="5"/>
+    </enumeratedValueSet>
+  </experiment>
+  <experiment name="Main experiment - just final result-100" repetitions="100" runMetricsEveryStep="false">
+    <setup>setup</setup>
+    <go>go</go>
+    <timeLimit steps="240"/>
+    <metric>municipality-stats 0</metric>
+    <metric>municipality-stats 1</metric>
+    <metric>municipality-stats 2</metric>
+    <metric>municipality-stats 3</metric>
+    <metric>municipality-stats 4</metric>
+    <metric>municipality-stats 5</metric>
+    <metric>municipality-stats 6</metric>
+    <metric>municipality-stats 7</metric>
+    <metric>municipality-stats 8</metric>
+    <metric>municipality-stats 9</metric>
+    <enumeratedValueSet variable="technology-increase">
+      <value value="0.5"/>
+      <value value="1"/>
+      <value value="2"/>
     </enumeratedValueSet>
   </experiment>
 </experiments>
