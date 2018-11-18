@@ -38,6 +38,29 @@ find_failure_count = function(value_string){
   as.numeric(unlist(strsplit(value_string,","))[seq(9,length(value_string) * 9,9)])
 }
 
+# EXTRACT BASE RUN VALUES ------------------------------------------------------------
+result_df = read.csv("Project_structure Sensitivity Analysis base run-table.csv", stringsAsFactors = F, skip = 6, header = T)
+colnames(result_df)[colnames(result_df) == "X.run.number."] = "run.number"
+colnames(result_df)[colnames(result_df) == "X.step."] = "step"
+
+result_df = melt(result_df, id.vars = colnames(result_df)[1:(ncol(result_df)-10)])
+result_df = subset(result_df, select = -c(run.number, step, variable))
+
+result_df$kpi_expenditure = find_expenditure(result_df$value)
+result_df$kpi_final_gap = find_final_gap(result_df$value)
+result_df$kpi_failure_count = find_failure_count(result_df$value)
+result_df$behavior_importance_tendency = find_importance_tendency(result_df$value)
+result_df$behavior_knowledge_tendency = find_knowledge_tendency(result_df$value)
+result_df$behavior_target_tendency = find_target_tendency(result_df$value)
+result_df$behavior_price_tendency = find_price_tendency(result_df$value)
+result_df$behavior_sq_investment = find_sq_investment(result_df$value)
+result_df$behavior_centralized = find_centralized(result_df$value)
+result_df$kpi_failure_count = find_failure_count(result_df$value)
+result_df = subset(result_df, select = -value)
+
+BaseRunKPIExpenditure = mean(result_df$kpi_expenditure)
+BaseRunKPIFailureCount = mean(result_df$kpi_failure_count)
+
 # INITIALIZATION OF BASE VALUES ------------------------------------------------------------
 
 recycling_target = 0.65
@@ -59,20 +82,17 @@ Vectorplus25 = c(0.8125,	0.4375,	0.375,	0.625,	1.25,	1,	0.0025,	0.000625,	25,	18
 Vectorminus25 = c(0.4875,	0.2625,	0.225,	0.375,	0.75,	0.6,	0.0015,	0.000375,	15,	11.25,	8,	3)
 
 # READING DATA ------------------------------------------------------------
-# TOWriteDf = 0
 
-# extract_data = function(file_name, new_value_vector)
-# {
-  result_df = read.csv("Project_structure Sensitivity Analysis plus 10%-table.csv", stringsAsFactors = F, skip = 6, header = T)
+extract_data = function(file_name, new_value_vector)
+{
+  result_df = read.csv(file_name, stringsAsFactors = F, skip = 6, header = T)
   colnames(result_df)[colnames(result_df) == "X.run.number."] = "run.number"
   colnames(result_df)[colnames(result_df) == "X.step."] = "step"
   
   result_df = melt(result_df, id.vars = colnames(result_df)[1:(ncol(result_df)-10)])
   result_df = subset(result_df, select = -c(run.number, step, variable))
-  result_df[,1:(ncol(result_df)-1)] = as.factor(result_df[,1:(ncol(result_df)-1)])
-  
-  print("Passed")
-  
+  # result_df[,1:(ncol(result_df)-1)] = as.factor(result_df[,1:(ncol(result_df)-1)])
+
 # SEPARATION OF VALUES ----------------------------------------------------
   
   result_df$kpi_expenditure = find_expenditure(result_df$value)
@@ -185,7 +205,7 @@ Vectorminus25 = c(0.4875,	0.2625,	0.225,	0.375,	0.75,	0.6,	0.0015,	0.000375,	15,
                                               betas_decrease_multiplier, investment_cost,
                                               recycling_target_increase, num_municipalities,
                                               num_RC),
-                             "Changed_Value" = Vectorplus10,
+                             "Changed_Value" = new_value_vector,
                              "Expenditure_per_capita" = c(mean(recycling_target_subset$kpi_expenditure),
                                                           mean(eta_subset$kpi_expenditure),
                                                           mean(theta_old_subset$kpi_expenditure),
@@ -198,18 +218,6 @@ Vectorminus25 = c(0.4875,	0.2625,	0.225,	0.375,	0.75,	0.6,	0.0015,	0.000375,	15,
                                                           mean(recycling_target_increase_subset$kpi_expenditure),
                                                           mean(num_municipalities_subset$kpi_expenditure),
                                                           mean(num_RC_subset$kpi_expenditure)),
-                             "Final_Gap" = c(mean(recycling_target_subset$kpi_final_gap),
-                                             mean(eta_subset$kpi_final_gap),
-                                             mean(theta_old_subset$kpi_final_gap),
-                                             mean(theta_single_subset$kpi_final_gap),
-                                             mean(theta_family_subset$kpi_final_gap),
-                                             mean(theta_couple_subset$kpi_final_gap),
-                                             mean(investment_multiplier_subset$kpi_final_gap),
-                                             mean(betas_decrease_multiplier_subset$kpi_final_gap),
-                                             mean(investment_cost_subset$kpi_final_gap),
-                                             mean(recycling_target_increase_subset$kpi_final_gap),
-                                             mean(num_municipalities_subset$kpi_final_gap),
-                                             mean(num_RC_subset$kpi_final_gap)),
                              "Failure_Count" = c(mean(recycling_target_subset$kpi_failure_count),
                                                  mean(eta_subset$kpi_failure_count),
                                                  mean(theta_old_subset$kpi_failure_count),
@@ -222,14 +230,10 @@ Vectorminus25 = c(0.4875,	0.2625,	0.225,	0.375,	0.75,	0.6,	0.0015,	0.000375,	15,
                                                  mean(recycling_target_increase_subset$kpi_failure_count),
                                                  mean(num_municipalities_subset$kpi_failure_count),
                                                  mean(num_RC_subset$kpi_failure_count)))
-#   TOWriteDf = SensitivityDf
-# }
+  return (SensitivityDf)
+}
 
-# extract_data("Project_structure Sensitivity Analysis plus 10%-table.csv", Vectorplus10)
-# write.csv(TOWriteDf, "Sensitivity Analysis Results plus 10%.csv", row.names = F)
-# extract_data("Project_structure Sensitivity Analysis minus 10%-table.csv", Vectorminus10)
-# write.csv(TOWriteDf, "Sensitivity Analysis Results minus 10%.csv", row.names = F)
-# extract_data("Project_structure Sensitivity Analysis plus 25%-table.csv", Vectorplus25)
-# write.csv(TOWriteDf, "Sensitivity Analysis Results plus 25%.csv", row.names = F)
-# extract_data("Project_structure Sensitivity Analysis minus 25%-table.csv", Vectorminus25)
-# write.csv(TOWriteDf, "Sensitivity Analysis Results minus 25%.csv", row.names = F)
+write.csv(extract_data("Project_structure Sensitivity Analysis plus 10%-table.csv", Vectorplus10), "Sensitivity Analysis Results plus 10%.csv", row.names = F)
+write.csv(extract_data("Project_structure Sensitivity Analysis minus 10%-table.csv", Vectorminus10), "Sensitivity Analysis Results minus 10%.csv", row.names = F)
+write.csv(extract_data("Project_structure Sensitivity Analysis plus 25%-table.csv", Vectorplus25), "Sensitivity Analysis Results plus 25%.csv", row.names = F)
+write.csv(extract_data("Project_structure Sensitivity Analysis minus 25%-table.csv", Vectorminus25), "Sensitivity Analysis Results minus 25%.csv", row.names = F)

@@ -17,6 +17,7 @@ globals [
   base-value-beta1
   base-value-beta2
   base-value-target-investment-tendency
+  error-value
 ]
 
 breed [municipalities municipality]
@@ -106,6 +107,7 @@ to global-initialize
   set base-value-beta1 0.4
   set base-value-beta2 0.55
   set base-value-target-investment-tendency 0.25
+  set error-value 0
 end
 
 to municipality-initialize
@@ -166,28 +168,37 @@ end
 
 
 to go
-  if ticks > 240 [stop]
-  technology-progress
-  target-change
+  ifelse error-value = 0
+  [
+    if ticks > 240 [stop]
+    technology-progress
+    target-change
 
-  ask municipalities [ produce-waste ticks ]
+    ask municipalities [ produce-waste ticks ]
 
-  if remainder ticks 36 = 0 [
-    last-contract-history
-    clear-previous-contracts
-    contract-procedure
+    if remainder ticks 36 = 0 [
+      last-contract-history
+      clear-previous-contracts
+      contract-procedure
+      verify-contracts
+    ]
+
+    ask RCs [process-waste] ; it should update expenditure of the related municipality by base price and fine as well
+
+    ask municipalities [
+      check-target-investment-necessity
+      ;set label round (expenditure * 1000)
+      decrease-betas
+      check-recycling-rate
+    ]
+
+    verify-attributes
+
+    tick
   ]
-
-  ask RCs [process-waste] ; it should update expenditure of the related municipality by base price and fine as well
-
-  ask municipalities [
-    check-target-investment-necessity
-    set label round (expenditure * 1000)
-    decrease-betas
-    check-recycling-rate
+  [
+    stop
   ]
-
-  tick
 
 end
 
@@ -197,7 +208,7 @@ to visualize
   ask municipalities
   [
     fd 15
-    set color 10 * who + 5
+    set color 45
     set size num-household / min [num-household] of municipalities
   ]
   ask RCs
@@ -420,6 +431,54 @@ to-report municipality-stats [x]
   [ set met? False ]
   report (word money "," final-gap "," importance-tendency "," knowledge-tendency "," target-tendency "," price-tendency "," isq? "," c? "," failure-count)
 end
+
+to verify-attributes
+  ask municipalities [
+    if TW <= 0
+    [
+      set color red
+      print (word "ERROR: Negative Waste Produced by municipality" who)
+      set error-value 1
+    ]
+    if beta1 >= 1 or beta2 >= 1[
+      set color pink
+      print (word "ERROR: Perfect importance or knowledge state reached by municipality" who)
+      set error-value 1
+    ]
+  ]
+  ask RCs[
+    if alpha >= 1 [
+      set color red
+      print (word "ERROR: Perfect sortation efficiency reached by RC" who)
+      set error-value 1
+    ]
+  ]
+end
+
+to verify-contracts
+  ask municipalities[
+    let waste-contracted 0
+    ask my-contracts [
+      set waste-contracted (waste-contracted + promised-waste)
+    ]
+    if precision waste-contracted 4 < precision TW 4 [
+      set color orange
+      print (word "ERROR: All waste of municipality" who " not contracted")
+      set error-value 1
+    ]
+  ]
+  ask RCs[
+    let waste-agreed-in-contracts 0
+    ask my-contracts[
+      set waste-agreed-in-contracts (waste-agreed-in-contracts + precision promised-waste 4)
+    ]
+    if waste-agreed-in-contracts > (capacity + 0.0001 * precision capacity 4)[
+      set color blue
+      print (word "ERROR: Waste promised in contracts is greater than capacity of RC" who)
+      set error-value 1
+    ]
+  ]
+end
 @#$#@#$#@
 GRAPHICS-WINDOW
 6
@@ -449,9 +508,9 @@ ticks
 30.0
 
 BUTTON
-293
+254
 457
-356
+317
 490
 NIL
 setup
@@ -466,10 +525,10 @@ NIL
 1
 
 BUTTON
-282
-536
-370
-569
+407
+458
+495
+491
 go-always
 go
 T
@@ -483,10 +542,10 @@ NIL
 1
 
 BUTTON
-288
-497
-365
-530
+323
+457
+400
+490
 go-once
 go
 NIL
@@ -518,10 +577,10 @@ PENS
 "default" 1.0 0 -16777216 true "" "if count contracts > 0[\nlet x 0\nask municipalities[\n set x x + average-recycling-rate-met\n]\nplot x / count municipalities]"
 
 SLIDER
-6
-530
-245
-563
+7
+456
+246
+489
 technology-increase
 technology-increase
 0
@@ -533,10 +592,10 @@ percent
 HORIZONTAL
 
 PLOT
-523
-222
-723
-372
+522
+179
+722
+329
 Average monthly mun. expenditure
 NIL
 NIL
@@ -551,10 +610,10 @@ PENS
 "default" 1.0 0 -16777216 true "" "if ticks != 0[\n  let x 0\n  ask municipalities[\n    set x (x + expenditure * 1000)\n  ]\n  plot x / count municipalities / ticks]"
 
 PLOT
-528
-430
-728
-580
+521
+343
+721
+493
 Average betas
 NIL
 NIL
@@ -570,11 +629,11 @@ PENS
 "beta2" 1.0 0 -13345367 true "" "let x 0\nask municipalities[\n set x x + beta2\n]\nplot x / count municipalities"
 
 PLOT
-750
-272
-1113
-505
-Municipalities beta1
+744
+251
+1107
+484
+Importance of Recycling (beta 1)
 NIL
 NIL
 0.0
@@ -587,11 +646,11 @@ false
 PENS
 
 PLOT
-1122
-273
-1491
-504
-municipalities beta2
+1117
+251
+1486
+482
+Knowledge of recycling (beta 2)
 NIL
 NIL
 0.0
@@ -604,11 +663,11 @@ false
 PENS
 
 PLOT
-747
-25
-1111
-254
-Average municipalities expenditure per month per household
+743
+10
+1107
+239
+Avg. municipalities expenditure per month per household
 NIL
 NIL
 0.0
@@ -621,11 +680,11 @@ false
 PENS
 
 PLOT
-1123
-26
-1483
-256
-Average municipalities recycling rate
+1118
+10
+1478
+240
+Avg. municipalities recycling rate
 NIL
 NIL
 0.0
@@ -999,7 +1058,7 @@ false
 Polygon -7500403 true true 270 75 225 30 30 225 75 270
 Polygon -7500403 true true 30 75 75 30 270 225 225 270
 @#$#@#$#@
-NetLogo 6.0.3
+NetLogo 6.0.4
 @#$#@#$#@
 @#$#@#$#@
 @#$#@#$#@
@@ -1344,6 +1403,8 @@ NetLogo 6.0.3
     <metric>municipality-stats 5</metric>
     <metric>municipality-stats 6</metric>
     <metric>municipality-stats 7</metric>
+    <metric>municipality-stats 8</metric>
+    <metric>municipality-stats 9</metric>
     <enumeratedValueSet variable="recycling-target">
       <value value="0.65"/>
     </enumeratedValueSet>

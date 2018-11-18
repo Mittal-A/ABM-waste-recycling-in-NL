@@ -1,0 +1,13 @@
+"Variable_Name","Base_Value","Changed_Value","Expenditure_per_capita","Failure_Count"
+"recycling target",0.65,0.715,1234.9842284,75.37
+"eta",0.35,0.385,1241.2624287,67.81
+"theta old",0.3,0.33,1251.8960564,93.88
+"theta single",0.5,0.55,1217.5906612,90.77
+"theta family",1,1.1,1266.5934466,91.78
+"theta couple",0.8,0.88,1227.623837,90.45
+"investment multiplier",0.002,0.0022,1282.4346589,98.98
+"betas decrease multiplier",5e-04,0.00055,1222.809326,110.38
+"investment cost",20,22,1263.8244107,89.18
+"recycling target increase",15,16.5,1249.2915413,102.23
+"num municipalities",10,11,1260.2831638,93.31
+"num RC",5,6,1243.3341345,84.24
