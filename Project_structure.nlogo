@@ -363,8 +363,8 @@ to create-offer
       let ersp temp2 * recyclable-separated-waste                              ;;extractable recyclable waste from recyclable separated waste
       let ernsp temp2 * temp2 * ((eta * total-waste) - recyclable-separated-waste);;extractable recyclable waste from recyclable non-separated waste
       set proposed-recycling-rate ((ersp + ernsp) / (eta * total-waste))       ;;recycling target proposed based on RCs ability to extract recyclable waste from total recyclable plastics
-      set base-price ((0.9 + random-float 0.1) + ([alpha] of myself / minimum-alpha - (separated-waste / total-waste)  - (recyclable-separated-waste / separated-waste))) * 100
-      ;print ((0.9 + random-float 0.1) + [alpha] of myself / minimum-alpha - 1 * ((separated-waste / total-waste)  + (recyclable-separated-waste / separated-waste))) * 100
+      set base-price ((0.5 + random-float 0.1) + [alpha] of myself / minimum-alpha - 1 * ((separated-waste / total-waste)  + (recyclable-separated-waste / separated-waste))) * 200
+      ;print ((0.5 + random-float 0.1) + [alpha] of myself / minimum-alpha - 1 * ((separated-waste / total-waste)  + (recyclable-separated-waste / separated-waste))) * 200
       if [centralized?] of other-end = False
       [
         set base-price base-price * 1.1                                        ;;RCs charge more base price if collection infrastructure is decentralized
