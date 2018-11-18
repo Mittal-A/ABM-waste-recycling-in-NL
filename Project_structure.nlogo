@@ -166,11 +166,11 @@ end
 
 
 to go
-
+  if ticks > 240 [stop]
   technology-progress
   target-change
 
-  ask municipalities [ produce-waste ticks]
+  ask municipalities [ produce-waste ticks ]
 
   if remainder ticks 36 = 0 [
     last-contract-history
@@ -182,13 +182,13 @@ to go
 
   ask municipalities [
     check-target-investment-necessity
-    set label round expenditure
+    set label round (expenditure * 1000)
     decrease-betas
     check-recycling-rate
   ]
 
   tick
-  if ticks > 240 [stop]
+
 end
 
 ;; general procedures:
@@ -327,7 +327,7 @@ end
 
 to invest-in-knowledge [tendency]
   if (beta1 < 0.9) or (beta2 < 0.9)[
-    set expenditure (expenditure + investment-cost * tendency * (invest-in-recycling-importance + invest-in-recycling-knowledge))
+    set expenditure (expenditure + investment-cost * tendency * (invest-in-recycling-importance + invest-in-recycling-knowledge) / num-household)
     set beta1 min list (beta1 + invest-in-recycling-importance * investment-multiplier * tendency) 0.9
     set beta2 min list (beta2 + invest-in-recycling-knowledge * investment-multiplier * tendency) 0.9
   ]
@@ -335,7 +335,7 @@ end
 
 to decrease-betas
   ifelse invest-in-status-quo? = true
-  [ set expenditure (expenditure + investment-cost / investment-multiplier * betas-decrease-multiplier)]
+  [ set expenditure (expenditure + investment-cost / investment-multiplier * betas-decrease-multiplier / num-household)]
   [
     set beta1 max list 0.4 (beta1 - betas-decrease-multiplier)
     set beta2 max list 0.55 (beta2 - betas-decrease-multiplier)
@@ -363,7 +363,8 @@ to create-offer
       let ersp temp2 * recyclable-separated-waste                              ;;extractable recyclable waste from recyclable separated waste
       let ernsp temp2 * temp2 * ((eta * total-waste) - recyclable-separated-waste);;extractable recyclable waste from recyclable non-separated waste
       set proposed-recycling-rate ((ersp + ernsp) / (eta * total-waste))       ;;recycling target proposed based on RCs ability to extract recyclable waste from total recyclable plastics
-      set base-price ((0.9 + random-float 0.1) * 100 + max list (([alpha] of myself / minimum-alpha - (separated-waste / total-waste)  - (recyclable-separated-waste / separated-waste)) * 100) 0)
+      set base-price ((0.9 + random-float 0.1) + ([alpha] of myself / minimum-alpha - (separated-waste / total-waste)  - (recyclable-separated-waste / separated-waste))) * 100
+      ;print ((0.9 + random-float 0.1) + [alpha] of myself / minimum-alpha - 1 * ((separated-waste / total-waste)  + (recyclable-separated-waste / separated-waste))) * 100
       if [centralized?] of other-end = False
       [
         set base-price base-price * 1.1                                        ;;RCs charge more base price if collection infrastructure is decentralized
@@ -405,7 +406,7 @@ to process-waste
 end
 
 to-report municipality-stats [x]
-  let money round [expenditure] of municipality x
+  let money precision ([expenditure] of municipality x * 1000) 5
   let final-gap precision ([average-recycling-rate-met] of municipality x - recycling-target) 2
   let importance-tendency precision ([invest-in-recycling-importance] of municipality x) 2
   let knowledge-tendency precision ([invest-in-recycling-knowledge] of municipality x) 2
@@ -547,7 +548,7 @@ true
 false
 "" ""
 PENS
-"default" 1.0 0 -16777216 true "" "if ticks != 0[\n  let x 0\n  ask municipalities[\n    set x (x + expenditure)\n  ]\n  plot x / count municipalities / ticks]"
+"default" 1.0 0 -16777216 true "" "if ticks != 0[\n  let x 0\n  ask municipalities[\n    set x (x + expenditure * 1000)\n  ]\n  plot x / count municipalities / ticks]"
 
 PLOT
 528
@@ -1032,7 +1033,7 @@ NetLogo 6.0.3
       <value value="36"/>
     </enumeratedValueSet>
   </experiment>
-  <experiment name="Test experiment" repetitions="10" runMetricsEveryStep="true">
+  <experiment name="Test experiment" repetitions="1" runMetricsEveryStep="true">
     <setup>setup</setup>
     <go>go</go>
     <timeLimit steps="240"/>
@@ -1381,6 +1382,26 @@ NetLogo 6.0.3
     </enumeratedValueSet>
   </experiment>
   <experiment name="Main experiment - just final result-100" repetitions="100" runMetricsEveryStep="false">
+    <setup>setup</setup>
+    <go>go</go>
+    <timeLimit steps="240"/>
+    <metric>municipality-stats 0</metric>
+    <metric>municipality-stats 1</metric>
+    <metric>municipality-stats 2</metric>
+    <metric>municipality-stats 3</metric>
+    <metric>municipality-stats 4</metric>
+    <metric>municipality-stats 5</metric>
+    <metric>municipality-stats 6</metric>
+    <metric>municipality-stats 7</metric>
+    <metric>municipality-stats 8</metric>
+    <metric>municipality-stats 9</metric>
+    <enumeratedValueSet variable="technology-increase">
+      <value value="0.5"/>
+      <value value="1"/>
+      <value value="2"/>
+    </enumeratedValueSet>
+  </experiment>
+  <experiment name="Main experiment - just final result-1000" repetitions="1000" runMetricsEveryStep="false">
     <setup>setup</setup>
     <go>go</go>
     <timeLimit steps="240"/>
