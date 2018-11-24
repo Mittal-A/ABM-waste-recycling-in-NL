@@ -1,19 +1,19 @@
 globals [
-  recycling-target
-  num-municipalities
-  num-RC
-  eta
-  theta-old
+  recycling-target ; exogenous target
+  num-municipalities ; number of municipality
+  num-RC ; number of recycling companies
+  eta ; ratio of recyclable plastic in waste
+  theta-old ; household type waste multiplier
   theta-single
   theta-family
   theta-couple
   TTW  ; Total waste expected to be generated from all municipalities
   investment-multiplier ; adjusts how much each knowledge factor needs to be increased by investment in knowledge
-  betas-decrease-multiplier
+  betas-decrease-multiplier ; knowledge loss per month
   investment-cost ; what is the cost of each investment
   month-before-technology-increase
   recycling-target-increase
-  month-before-target-increase
+  month-before-target-increase ; when recycling target should change
   base-value-beta1
   base-value-beta2
   base-value-target-investment-tendency
@@ -34,28 +34,28 @@ municipalities-own [
   num-household-couple
   mu ; collection infrastructure factor
   centralized? ; collection infrastructure type
-  expenditure
+  expenditure ; per household
   beta1 ; knowledge of importance of recycling
   beta2 ; knowledge of how to recycle
   TW ; collected in this month. zero at the begining of each month
   SP ; collected in this month. zero at the begining of each month
   RSP ; collected in this month. zero at the begining of each month
-  remaining-waste-fraction
+  remaining-waste-fraction ; used for allocation of waste over different contracts with different RCs
   price-investment-tendency ; to see different behaviors of knowledge investment for behavior analysis
-  target-investment-tendency
-  invest-in-recycling-importance
-  invest-in-recycling-knowledge
+  target-investment-tendency ;  to see different behaviors of knowledge investment for behavior analysis
+  invest-in-recycling-importance ; increase of beta1
+  invest-in-recycling-knowledge ; increase of beta2
   last-contract-base-price-mean
   invest-in-status-quo?
   average-recycling-rate-met
-  target-failure-months
-  target-importance
+  target-failure-months ; number of month the municipality failed to meet the target
+  target-importance ; importance of meeting the target over choosing the cheapest offer for the contract
 ]
 
 RCs-own[
   alpha ; technology factor
   capacity ; amount of waste can be processed monthly
-  remaining-capacity ; not yet given to any municipality
+  remaining-capacity ; to keep track of allocated capacity
 ]
 
 offers-own[
@@ -63,7 +63,7 @@ offers-own[
   total-waste ; total waste given by a municipality
   separated-waste
   recyclable-separated-waste
-  m ; fine factor in our calculation
+  m ; fine factor in the calculation
   proposed-recycling-rate ; recycling rate possible for the recycling company for a specefic municipality
   proposed-capacity ; remaining capacity of the connected RC
 ]
@@ -98,21 +98,21 @@ to global-initialize
   set theta-family 1
   set theta-couple 0.8
   set TTW  0
-  set investment-multiplier 0.002        ;; increase in beta1 and beta 2 with investment in knowledge
+  set investment-multiplier 0.002        ; increase in beta1 and beta 2 with investment in knowledge
   set betas-decrease-multiplier 0.0005
-  set investment-cost 20                 ;;assumption that each investment in policy costs around 20000 euros
-  set month-before-technology-increase 12
+  set investment-cost 20                 ; assumption that each investment in policy costs around 20000 euros
+  set month-before-technology-increase 12 ; each year technology changes
   set recycling-target-increase 15
-  set month-before-target-increase 120
+  set month-before-target-increase 120 ; assumption is that recycling target changes after 10 years with 15 percent
   set base-value-beta1 0.4
   set base-value-beta2 0.55
   set base-value-target-investment-tendency 0.25
-  set error-value 0
+  set error-value 0 ; used for model verification / zero is no conceptual error
 end
 
 to municipality-initialize
   create-ordered-municipalities num-municipalities [
-    set num-household (11000 + random 50000)
+    set num-household (11000 + random 50000) ; random distribution of households to produce waste in given range in the case descrition
     set num-household-old round (0.2 * num-household)
     set num-household-single round (0.25 * num-household)
     set num-household-family round (0.30 * num-household)
@@ -127,15 +127,15 @@ to municipality-initialize
       set mu (0.85 + random-float 0.1)
     ]
     set expenditure 0
-    set beta1 (base-value-beta1 + random-float 0.1)                                  ; knowledge of importance of recycling
-    set beta2 (base-value-beta2 + random-float 0.1)                                 ; knowledge of how to recycle
-    set TW 0                                                            ; collected in this month. zero at the begining of each month
-    set SP 0                                                            ; collected in this month. zero at the begining of each month
-    set RSP 0                                                           ; collected in this month. zero at the begining of each month
+    set beta1 (base-value-beta1 + random-float 0.1)
+    set beta2 (base-value-beta2 + random-float 0.1)
+    set TW 0 ; collected in this month. zero at the begining of each month
+    set SP 0 ; collected in this month. zero at the begining of each month
+    set RSP 0 ; collected in this month. zero at the begining of each month
     set target-investment-tendency (base-value-target-investment-tendency + random 4 / 4)
     set price-investment-tendency ((random 6 + 1) * 3)
     set target-importance target-investment-tendency * 4
-    let temp random 3
+    let temp random 3 ; this variable is used to make a combination of "invest-in-recycling-importance" and "invest-in-recycling-knowledge" which sums up to 1.5
     ifelse temp = 0
     [ set invest-in-recycling-importance 0.75
       set invest-in-recycling-knowledge 0.75]
@@ -153,58 +153,20 @@ end
 to RC-initialize
   create-ordered-RCs num-RC
   ask RCs[
-    set alpha (0.55 + random 5 * 0.05)                                  ;;the sorting factor of each company is set to a random value
-    set capacity (TTW / num-RC * 1.15)                                  ;;capacity is set to be an equal proportion of the total waste expected to be generated from all the municipalities
-    set remaining-capacity capacity                                     ;;the remaining capacity is equal to the total capacity of the RC at the start of the model run
+    set alpha (0.55 + random 5 * 0.05) ; the sorting factor of each company is set to a random value
+    set capacity (TTW / num-RC * 1.15) ; capacity is set to be an equal proportion of the total waste expected to be generated from all the municipalities
+    set remaining-capacity capacity ; the remaining capacity is equal to the total capacity of the RC at the start of the model run
   ]
 end
 
-to initialize-waste
+to initialize-waste ; this provide the first calculation of waste to make RCs with poroper capacity
   ask municipalities [
     produce-waste 1
     set TTW (TTW + TW)
   ]
 end
 
-
-to go
-  ifelse error-value = 0
-  [
-    if ticks > 240 [stop]
-    technology-progress
-    target-change
-
-    ask municipalities [ produce-waste ticks ]
-
-    if remainder ticks 36 = 0 [
-      last-contract-history
-      clear-previous-contracts
-      contract-procedure
-      verify-contracts
-    ]
-
-    ask RCs [process-waste] ; it should update expenditure of the related municipality by base price and fine as well
-
-    ask municipalities [
-      check-target-investment-necessity
-      ;set label round (expenditure * 1000)
-      decrease-betas
-      check-recycling-rate
-    ]
-
-    verify-attributes
-
-    tick
-  ]
-  [
-    stop
-  ]
-
-end
-
-;; general procedures:
-
-to visualize
+to visualize ; position and color of agents
   ask municipalities
   [
     fd 15
@@ -218,6 +180,43 @@ to visualize
     set size 2
   ]
 end
+
+
+to go
+  ifelse error-value = 0 ; if a verifiation error happens, model stops
+  [
+    if ticks > 240 [stop] ; 20 years model run time
+    technology-progress ; technology changes at the beginning of a month if enough time has passed
+    target-change ; recycling target changes at the beginning of a month if enough time has passed
+
+    ask municipalities [ produce-waste ticks ] ; waste production by municipality based on month number
+
+    if remainder ticks 36 = 0 [
+      last-contract-history ; saving mean of last contracts base price
+      clear-previous-contracts
+      contract-procedure ; request offer - create offer - establish contract
+      verify-contracts ; verification procedure
+    ]
+
+    ask RCs [process-waste] ; updates expenditure of the related municipality by base price and fine as well as calculating current recycling rate
+
+    ask municipalities [
+      check-target-investment-necessity ; if current recycling rate < target -> invest
+      decrease-betas ; monthly beta1 and beta2 decrease
+      check-recycling-rate ; compatison of current recycling rate and target for counting month target is failed
+    ]
+
+    verify-attributes ; verification procedure
+
+    tick
+  ]
+  [
+    stop
+  ]
+
+end
+
+;; general procedures:
 
 to technology-progress
 
@@ -237,9 +236,9 @@ to target-change
 end
 
 to clear-previous-contracts
-  ask municipalities [set remaining-waste-fraction 1]
+  ask municipalities [set remaining-waste-fraction 1] ; to start allocating waste fraction for neth contract / no allocated waste
   ask contracts [die] ; removing previous contracts to build new contracts
-  ask RCs [set remaining-capacity capacity]
+  ask RCs [set remaining-capacity capacity] ; no capacity is allocated
 end
 
 to last-contract-history
@@ -249,16 +248,16 @@ to last-contract-history
 end
 
 to contract-procedure
-  foreach sort-on [beta1 * beta2 * mu] municipalities [ the-municipality ->
+  foreach sort-on [beta1 * beta2 * mu] municipalities [ the-municipality -> ; municipalities get to go through contract procedures based on their attractiveness for RCs
     ask the-municipality [
-      while [[remaining-waste-fraction] of self > 0] [
-        request-offer
-        ask RCs [create-offer]
+      while [[remaining-waste-fraction] of self > 0] [ ; until all waste is allocated
+        request-offer ; making link with RCs, filling it with waste composition
+        ask RCs [create-offer] ; filling up price, fine, proposed recycling rate and proposed capacity in the offer link
         establish-contract ; municipality chooses the contract it wants and make a contract link based on that ; if an offer is established, left cacpacity of that RC should be updated
         ask offers [die] ; removing the offers before going to the next municipality
       ]
       if ticks != 0 [
-        check-price-investment-necessity
+        check-price-investment-necessity ; invest if new contracts are more expensive
       ]
     ]
   ]
@@ -275,7 +274,7 @@ to produce-waste [ month-no ]
 end
 
 to-report waste-function [x]
-  report ((40 - 0.04 * x - exp(-0.01 * x) * sin(0.3 * x)) / 1000000)
+  report ((40 - 0.04 * x - exp(-0.01 * x) * sin(0.3 * x)) / 1000000) ; given in the case description / kiloton
 end
 
 to request-offer
@@ -292,10 +291,10 @@ end
 
 to establish-contract
   let cheapest-base-price min ([base-price] of my-offers)
-  let candidate-offer one-of my-offers
-  let offer-utility 0
-  let candidate-RC 0
-  ask my-offers[
+  let candidate-offer one-of my-offers ; initialization of a new variable for calculation / current value is not important
+  let offer-utility 0 ; initialization of a new variable for calculation / current value is not important
+  let candidate-RC 0 ; initialization of a new variable for calculation / current value is not important
+  ask my-offers[ ; sorting procedure
     if offer-utility <= ((min list recycling-target proposed-recycling-rate) / recycling-target * [target-importance] of myself + cheapest-base-price / base-price) [
       set offer-utility ((min list recycling-target proposed-recycling-rate) / recycling-target * [target-importance] of myself + cheapest-base-price / base-price)
       set candidate-offer self
@@ -305,47 +304,47 @@ to establish-contract
     set candidate-RC other-end
     ask other-end
     [
-      set remaining-capacity (remaining-capacity - [proposed-capacity] of myself)
+      set remaining-capacity (remaining-capacity - [proposed-capacity] of myself) ; updating remaining capacity of RC
     ]
   ]
 
-  create-contract-with candidate-RC[
+  create-contract-with candidate-RC[ ; create contract link and initializing values based on the best offer
     set base-price [base-price] of candidate-offer
     set promised-waste [proposed-capacity] of candidate-offer
     set waste-fraction (promised-waste / [TW] of myself)
     set m [m] of candidate-offer
     set recycling-rate-met 0
-    set color green
+    set color green ; contracts are green, offers are grey
   ]
 
-  set remaining-waste-fraction max list (remaining-waste-fraction - [waste-fraction] of contract-with candidate-RC) 0
+  set remaining-waste-fraction max list (remaining-waste-fraction - [waste-fraction] of contract-with candidate-RC) 0 ; updating remaing waste fraction of the municipality
 end
 
 to check-target-investment-necessity
   foreach [recycling-rate-met] of my-contracts [ the-rate ->
-    if the-rate < recycling-target[
+    if the-rate < recycling-target[ ; invest in knowledge if any contract does'nt meet the target
       invest-in-knowledge target-investment-tendency
-      stop
+      stop ; one investment even if several contracts exist that does'nt meet the target
     ]
   ]
 end
 
 to check-price-investment-necessity
-  if mean [base-price] of my-contracts >= last-contract-base-price-mean[
-    invest-in-knowledge (price-investment-tendency * mean [base-price] of my-contracts / last-contract-base-price-mean)
+  if mean [base-price] of my-contracts >= last-contract-base-price-mean[ ; comparing mean price of previous period contracts to current ones
+    invest-in-knowledge (price-investment-tendency * mean [base-price] of my-contracts / last-contract-base-price-mean) ; invest based on tendency and the increase in contracts prices
   ]
 end
 
-to invest-in-knowledge [tendency]
-  if (beta1 < 0.9) or (beta2 < 0.9)[
-    set expenditure (expenditure + investment-cost * tendency * (invest-in-recycling-importance + invest-in-recycling-knowledge) / num-household)
+to invest-in-knowledge [tendency] ; investment is based on tendency
+  if (beta1 < 0.9) or (beta2 < 0.9)[ ; assumption of imperfection / betas won't go higher than 0.9
+    set expenditure (expenditure + investment-cost * tendency * (invest-in-recycling-importance + invest-in-recycling-knowledge) / num-household) ; per household expenditure increase
     set beta1 min list (beta1 + invest-in-recycling-importance * investment-multiplier * tendency) 0.9
     set beta2 min list (beta2 + invest-in-recycling-knowledge * investment-multiplier * tendency) 0.9
   ]
 end
 
 to decrease-betas
-  ifelse invest-in-status-quo? = true
+  ifelse invest-in-status-quo? = true ; no decrease / just investment expenditure to keep status quo
   [ set expenditure (expenditure + investment-cost / investment-multiplier * betas-decrease-multiplier / num-household)]
   [
     set beta1 max list 0.4 (beta1 - betas-decrease-multiplier)
@@ -416,8 +415,8 @@ to process-waste
   ]
 end
 
-to-report municipality-stats [x]
-  let money precision ([expenditure] of municipality x * 1000) 5
+to-report municipality-stats [x] ; experiment output
+  let money precision ([expenditure] of municipality x * 1000) 5 ;
   let final-gap precision ([average-recycling-rate-met] of municipality x - recycling-target) 2
   let importance-tendency precision ([invest-in-recycling-importance] of municipality x) 2
   let knowledge-tendency precision ([invest-in-recycling-knowledge] of municipality x) 2
@@ -1061,7 +1060,7 @@ false
 Polygon -7500403 true true 270 75 225 30 30 225 75 270
 Polygon -7500403 true true 30 75 75 30 270 225 225 270
 @#$#@#$#@
-NetLogo 6.0.4
+NetLogo 6.0.3
 @#$#@#$#@
 @#$#@#$#@
 @#$#@#$#@
