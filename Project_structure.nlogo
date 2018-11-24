@@ -208,7 +208,7 @@ to visualize
   ask municipalities
   [
     fd 15
-    set color 45
+    set color 10 * who + 5
     set size num-household / min [num-household] of municipalities
   ]
   ask RCs
@@ -436,11 +436,13 @@ to verify-attributes
   ask municipalities [
     if TW <= 0
     [
+      ask other municipalities [set color yellow]
       set color red
       print (word "ERROR: Negative Waste Produced by municipality" who)
       set error-value 1
     ]
     if beta1 >= 1 or beta2 >= 1[
+      ask other municipalities [set color yellow]
       set color pink
       print (word "ERROR: Perfect importance or knowledge state reached by municipality" who)
       set error-value 1
@@ -462,6 +464,7 @@ to verify-contracts
       set waste-contracted (waste-contracted + promised-waste)
     ]
     if precision waste-contracted 4 < precision TW 4 [
+      ask other municipalities [set color yellow]
       set color orange
       print (word "ERROR: All waste of municipality" who " not contracted")
       set error-value 1
@@ -1063,62 +1066,6 @@ NetLogo 6.0.4
 @#$#@#$#@
 @#$#@#$#@
 <experiments>
-  <experiment name="Main experiment" repetitions="20" runMetricsEveryStep="true">
-    <setup>setup</setup>
-    <go>go</go>
-    <timeLimit steps="240"/>
-    <metric>municipality-stats 0</metric>
-    <metric>municipality-stats 1</metric>
-    <metric>municipality-stats 2</metric>
-    <metric>municipality-stats 3</metric>
-    <metric>municipality-stats 4</metric>
-    <metric>municipality-stats 5</metric>
-    <metric>municipality-stats 6</metric>
-    <metric>municipality-stats 7</metric>
-    <enumeratedValueSet variable="month-before-technology-increase">
-      <value value="12"/>
-      <value value="36"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="technology-increase">
-      <value value="1"/>
-      <value value="3"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="recycling-target-increase">
-      <value value="1"/>
-      <value value="3"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="month-before-target-increase">
-      <value value="12"/>
-      <value value="36"/>
-    </enumeratedValueSet>
-  </experiment>
-  <experiment name="Test experiment" repetitions="1" runMetricsEveryStep="true">
-    <setup>setup</setup>
-    <go>go</go>
-    <timeLimit steps="240"/>
-    <metric>municipality-stats 0</metric>
-    <metric>municipality-stats 1</metric>
-    <metric>municipality-stats 2</metric>
-    <metric>municipality-stats 3</metric>
-    <metric>municipality-stats 4</metric>
-    <metric>municipality-stats 5</metric>
-    <metric>municipality-stats 6</metric>
-    <metric>municipality-stats 7</metric>
-    <metric>municipality-stats 8</metric>
-    <metric>municipality-stats 9</metric>
-    <enumeratedValueSet variable="month-before-technology-increase">
-      <value value="12"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="technology-increase">
-      <value value="4"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="recycling-target-increase">
-      <value value="1"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="month-before-target-increase">
-      <value value="12"/>
-    </enumeratedValueSet>
-  </experiment>
   <experiment name="Main experiment - just final result" repetitions="20000" runMetricsEveryStep="false">
     <setup>setup</setup>
     <go>go</go>
@@ -1139,7 +1086,7 @@ NetLogo 6.0.4
       <value value="2"/>
     </enumeratedValueSet>
   </experiment>
-  <experiment name="Sensitivity Analysis plus 10%" repetitions="10" runMetricsEveryStep="false">
+  <experiment name="Sensitivity Analysis plus 10%" repetitions="100" runMetricsEveryStep="false">
     <setup>setup</setup>
     <go>go</go>
     <timeLimit steps="240"/>
@@ -1202,7 +1149,7 @@ NetLogo 6.0.4
       <value value="6"/>
     </enumeratedValueSet>
   </experiment>
-  <experiment name="Sensitivity Analysis minus 10%" repetitions="10" runMetricsEveryStep="false">
+  <experiment name="Sensitivity Analysis minus 10%" repetitions="100" runMetricsEveryStep="false">
     <setup>setup</setup>
     <go>go</go>
     <timeLimit steps="240"/>
@@ -1265,133 +1212,7 @@ NetLogo 6.0.4
       <value value="4"/>
     </enumeratedValueSet>
   </experiment>
-  <experiment name="Sensitivity Analysis plus 25%" repetitions="10" runMetricsEveryStep="false">
-    <setup>setup</setup>
-    <go>go</go>
-    <timeLimit steps="240"/>
-    <metric>municipality-stats 0</metric>
-    <metric>municipality-stats 1</metric>
-    <metric>municipality-stats 2</metric>
-    <metric>municipality-stats 3</metric>
-    <metric>municipality-stats 4</metric>
-    <metric>municipality-stats 5</metric>
-    <metric>municipality-stats 6</metric>
-    <metric>municipality-stats 7</metric>
-    <metric>municipality-stats 8</metric>
-    <metric>municipality-stats 9</metric>
-    <enumeratedValueSet variable="recycling-target">
-      <value value="0.65"/>
-      <value value="0.8125"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="eta">
-      <value value="0.35"/>
-      <value value="0.4375"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="theta-old">
-      <value value="0.3"/>
-      <value value="0.375"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="theta-single">
-      <value value="0.5"/>
-      <value value="0.625"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="theta-family">
-      <value value="1"/>
-      <value value="1.25"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="theta-couple">
-      <value value="0.8"/>
-      <value value="1"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="investment-multiplier">
-      <value value="0.002"/>
-      <value value="0.0025"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="betas-decrease-multiplier">
-      <value value="5.0E-4"/>
-      <value value="6.25E-4"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="investment-cost">
-      <value value="20"/>
-      <value value="25"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="recycling-target-increase">
-      <value value="15"/>
-      <value value="18.75"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="num-municipalities">
-      <value value="10"/>
-      <value value="13"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="num-RC">
-      <value value="5"/>
-      <value value="7"/>
-    </enumeratedValueSet>
-  </experiment>
-  <experiment name="Sensitivity Analysis minus 25%" repetitions="10" runMetricsEveryStep="false">
-    <setup>setup</setup>
-    <go>go</go>
-    <timeLimit steps="240"/>
-    <metric>municipality-stats 0</metric>
-    <metric>municipality-stats 1</metric>
-    <metric>municipality-stats 2</metric>
-    <metric>municipality-stats 3</metric>
-    <metric>municipality-stats 4</metric>
-    <metric>municipality-stats 5</metric>
-    <metric>municipality-stats 6</metric>
-    <metric>municipality-stats 7</metric>
-    <metric>municipality-stats 8</metric>
-    <metric>municipality-stats 9</metric>
-    <enumeratedValueSet variable="recycling-target">
-      <value value="0.65"/>
-      <value value="0.4875"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="eta">
-      <value value="0.35"/>
-      <value value="0.2625"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="theta-old">
-      <value value="0.3"/>
-      <value value="0.225"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="theta-single">
-      <value value="0.5"/>
-      <value value="0.375"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="theta-family">
-      <value value="1"/>
-      <value value="0.75"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="theta-couple">
-      <value value="0.8"/>
-      <value value="0.6"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="investment-multiplier">
-      <value value="0.002"/>
-      <value value="0.0015"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="betas-decrease-multiplier">
-      <value value="5.0E-4"/>
-      <value value="3.75E-4"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="investment-cost">
-      <value value="20"/>
-      <value value="15"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="recycling-target-increase">
-      <value value="15"/>
-      <value value="11.25"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="num-municipalities">
-      <value value="10"/>
-      <value value="8"/>
-    </enumeratedValueSet>
-    <enumeratedValueSet variable="num-RC">
-      <value value="5"/>
-      <value value="3"/>
-    </enumeratedValueSet>
-  </experiment>
-  <experiment name="Sensitivity Analysis base run" repetitions="10" runMetricsEveryStep="false">
+  <experiment name="Sensitivity Analysis base run" repetitions="20000" runMetricsEveryStep="false">
     <setup>setup</setup>
     <go>go</go>
     <timeLimit steps="240"/>
